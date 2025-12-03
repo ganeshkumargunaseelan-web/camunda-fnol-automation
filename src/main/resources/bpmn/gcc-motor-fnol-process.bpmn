@@ -1,0 +1,1022 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  GCC Motor FNOL Starter Kit
+  Copyright 2025 G. Ganesh Kumar | Solution Architect
+  Contact: UAE +971-55-816-0396 | WhatsApp +91-95000-03051
+  Apache License 2.0 - https://www.apache.org/licenses/LICENSE-2.0
+
+  Camunda 8 Features: DMN Routing, Timer/Error Boundaries, Message Events,
+  Call Activity, Multi-Instance, User Tasks with Forms, Service Tasks
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:zeebe="http://camunda.org/schema/zeebe/1.0"
+                  xmlns:modeler="http://camunda.org/schema/modeler/1.0"
+                  id="Definitions_GccMotorFnol"
+                  targetNamespace="http://camunda.org/gcc-motor-fnol"
+                  exporter="GCC Motor FNOL Starter Kit"
+                  exporterVersion="1.0.0"
+                  modeler:executionPlatform="Camunda Cloud"
+                  modeler:executionPlatformVersion="8.6.0">
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- MAIN FNOL PROCESS                                                        -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <bpmn:process id="gcc-motor-fnol-process" name="GCC Motor FNOL Process" isExecutable="true">
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- START EVENT                                                              -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <bpmn:startEvent id="StartEvent_FnolReceived" name="FNOL Received">
+      <bpmn:outgoing>Flow_ToValidation</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- INITIAL VALIDATION SERVICE TASK                                          -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <bpmn:serviceTask id="Task_ValidateClaim" name="Validate Claim Data">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="validate-claim-data" retries="3" />
+        <zeebe:taskHeaders>
+          <zeebe:header key="validationType" value="full" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToValidation</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToFraudCheck</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Error boundary for validation failures -->
+    <bpmn:boundaryEvent id="BoundaryEvent_ValidationError" name="Validation Failed" attachedToRef="Task_ValidateClaim">
+      <bpmn:outgoing>Flow_ValidationErrorToReview</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="ErrorDef_Validation" errorRef="Error_ValidationFailed" />
+    </bpmn:boundaryEvent>
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- FRAUD CHECK - CALL ACTIVITY (Reusable Sub-Process)                       -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <bpmn:callActivity id="CallActivity_FraudCheck" name="Fraud Detection Check">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="fraud-detection-process" propagateAllChildVariables="false" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=fnolId" target="claimId" />
+          <zeebe:input source="=mobileNumber" target="mobileNumber" />
+          <zeebe:input source="=nationalId" target="nationalId" />
+          <zeebe:input source="=policyNumber" target="policyNumber" />
+          <zeebe:input source="=incidentLocation" target="location" />
+          <zeebe:output source="=fraudScore" target="fraudScore" />
+          <zeebe:output source="=fraudIndicators" target="fraudIndicators" />
+          <zeebe:output source="=requiresManualReview" target="fraudRequiresReview" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToFraudCheck</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToFraudGateway</bpmn:outgoing>
+    </bpmn:callActivity>
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- FRAUD CHECK GATEWAY                                                      -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <bpmn:exclusiveGateway id="Gateway_FraudCheck" name="Fraud Detected?">
+      <bpmn:incoming>Flow_ToFraudGateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_FraudHigh</bpmn:outgoing>
+      <bpmn:outgoing>Flow_FraudLow</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- High Fraud Score Path -->
+    <bpmn:userTask id="Task_FraudInvestigation" name="Fraud Investigation Required">
+      <bpmn:extensionElements>
+        <zeebe:assignmentDefinition candidateGroups="fraud-investigators" />
+        <zeebe:formDefinition formKey="camunda-forms:bpmn:fraud-investigation-form.form" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_FraudHigh</bpmn:incoming>
+      <bpmn:outgoing>Flow_FraudInvestigationDone</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- SLA Timer for Fraud Investigation (24 hours) -->
+    <bpmn:boundaryEvent id="BoundaryEvent_FraudSLA" name="24h SLA" cancelActivity="false" attachedToRef="Task_FraudInvestigation">
+      <bpmn:outgoing>Flow_FraudEscalation</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerDef_FraudSLA">
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT24H</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+
+    <bpmn:serviceTask id="Task_EscalateFraud" name="Escalate to Fraud Manager">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="escalate-to-manager" />
+        <zeebe:taskHeaders>
+          <zeebe:header key="escalationType" value="fraud-sla-breach" />
+          <zeebe:header key="notifyChannel" value="email,sms" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_FraudEscalation</bpmn:incoming>
+      <bpmn:outgoing>Flow_FraudEscalationEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="EndEvent_FraudEscalation" name="Escalation Sent">
+      <bpmn:incoming>Flow_FraudEscalationEnd</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- Fraud Investigation Decision Gateway -->
+    <bpmn:exclusiveGateway id="Gateway_FraudDecision" name="Claim Approved?">
+      <bpmn:incoming>Flow_FraudInvestigationDone</bpmn:incoming>
+      <bpmn:outgoing>Flow_FraudApproved</bpmn:outgoing>
+      <bpmn:outgoing>Flow_FraudRejected</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- DMN DECISION: DETERMINE ROUTING                                          -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <bpmn:businessRuleTask id="Task_DetermineRouting" name="Determine Claim Routing">
+      <bpmn:extensionElements>
+        <zeebe:calledDecision decisionId="fnol-routing-decision" resultVariable="routingDecision" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_FraudLow</bpmn:incoming>
+      <bpmn:incoming>Flow_FraudApproved</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToRoutingGateway</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- DMN DECISION: CALCULATE SLA                                              -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <bpmn:businessRuleTask id="Task_CalculateSLA" name="Calculate SLA Duration">
+      <bpmn:extensionElements>
+        <zeebe:calledDecision decisionId="sla-duration-decision" resultVariable="slaDecision" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToRoutingGateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToRouteGateway</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- ROUTING GATEWAY                                                          -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <bpmn:exclusiveGateway id="Gateway_Routing" name="Route Claim">
+      <bpmn:incoming>Flow_ToRouteGateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToComplex</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToStandard</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToFastTrack</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- COMPLEX ROUTE SUB-PROCESS (Injuries - HIGH Severity)                     -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <bpmn:subProcess id="SubProcess_Complex" name="Complex Case Handling (Injuries)">
+      <bpmn:incoming>Flow_ToComplex</bpmn:incoming>
+      <bpmn:outgoing>Flow_ComplexToMerge</bpmn:outgoing>
+
+      <bpmn:startEvent id="Start_Complex">
+        <bpmn:outgoing>Flow_ComplexToParallel</bpmn:outgoing>
+      </bpmn:startEvent>
+
+      <!-- Parallel Gateway: Do multiple things at once -->
+      <bpmn:parallelGateway id="Gateway_ComplexParallel">
+        <bpmn:incoming>Flow_ComplexToParallel</bpmn:incoming>
+        <bpmn:outgoing>Flow_ToSeniorReview</bpmn:outgoing>
+        <bpmn:outgoing>Flow_ToMedicalNotify</bpmn:outgoing>
+        <bpmn:outgoing>Flow_ToPoliceReport</bpmn:outgoing>
+      </bpmn:parallelGateway>
+
+      <!-- Branch 1: Senior Claims Handler Review -->
+      <bpmn:userTask id="Task_SeniorReview" name="Senior Claims Handler Review">
+        <bpmn:extensionElements>
+          <zeebe:assignmentDefinition candidateGroups="senior-claims-handlers" />
+          <zeebe:formDefinition formKey="camunda-forms:bpmn:senior-review-form.form" />
+          <zeebe:taskSchedule dueDate="=now() + duration(slaDuration)" />
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_ToSeniorReview</bpmn:incoming>
+        <bpmn:outgoing>Flow_SeniorReviewDone</bpmn:outgoing>
+      </bpmn:userTask>
+
+      <!-- SLA Timer for Senior Review (4 hours for HIGH severity) -->
+      <bpmn:boundaryEvent id="BoundaryEvent_SeniorSLA" name="4h SLA Breach" cancelActivity="false" attachedToRef="Task_SeniorReview">
+        <bpmn:outgoing>Flow_SeniorEscalation</bpmn:outgoing>
+        <bpmn:timerEventDefinition id="TimerDef_SeniorSLA">
+          <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">=slaDuration</bpmn:timeDuration>
+        </bpmn:timerEventDefinition>
+      </bpmn:boundaryEvent>
+
+      <bpmn:serviceTask id="Task_EscalateSenior" name="Escalate to Claims Manager">
+        <bpmn:extensionElements>
+          <zeebe:taskDefinition type="escalate-to-manager" />
+          <zeebe:taskHeaders>
+            <zeebe:header key="escalationType" value="senior-review-sla-breach" />
+            <zeebe:header key="severity" value="HIGH" />
+          </zeebe:taskHeaders>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_SeniorEscalation</bpmn:incoming>
+        <bpmn:outgoing>Flow_SeniorEscalationEnd</bpmn:outgoing>
+      </bpmn:serviceTask>
+
+      <bpmn:endEvent id="End_SeniorEscalation">
+        <bpmn:incoming>Flow_SeniorEscalationEnd</bpmn:incoming>
+      </bpmn:endEvent>
+
+      <!-- Branch 2: Notify Medical Team -->
+      <bpmn:serviceTask id="Task_NotifyMedical" name="Notify Medical Team">
+        <bpmn:extensionElements>
+          <zeebe:taskDefinition type="notify-medical-team" retries="3" />
+          <zeebe:taskHeaders>
+            <zeebe:header key="notificationPriority" value="urgent" />
+          </zeebe:taskHeaders>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_ToMedicalNotify</bpmn:incoming>
+        <bpmn:outgoing>Flow_MedicalDone</bpmn:outgoing>
+      </bpmn:serviceTask>
+
+      <!-- Error boundary for medical notification failure -->
+      <bpmn:boundaryEvent id="BoundaryEvent_MedicalError" name="Notification Failed" attachedToRef="Task_NotifyMedical">
+        <bpmn:outgoing>Flow_MedicalFallback</bpmn:outgoing>
+        <bpmn:errorEventDefinition id="ErrorDef_Medical" errorRef="Error_NotificationFailed" />
+      </bpmn:boundaryEvent>
+
+      <bpmn:userTask id="Task_ManualMedicalNotify" name="Manual Medical Notification">
+        <bpmn:extensionElements>
+          <zeebe:assignmentDefinition candidateGroups="claims-handlers" />
+          <zeebe:formDefinition formKey="camunda-forms:bpmn:manual-notification-form.form" />
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_MedicalFallback</bpmn:incoming>
+        <bpmn:outgoing>Flow_ManualMedicalDone</bpmn:outgoing>
+      </bpmn:userTask>
+
+      <!-- Branch 3: Wait for Police Report (Message Event) -->
+      <bpmn:receiveTask id="Task_WaitPoliceReport" name="Wait for Police Report" messageRef="Message_PoliceReport">
+        <bpmn:incoming>Flow_ToPoliceReport</bpmn:incoming>
+        <bpmn:outgoing>Flow_PoliceReportReceived</bpmn:outgoing>
+      </bpmn:receiveTask>
+
+      <!-- Timer boundary: Don't wait forever for police report -->
+      <bpmn:boundaryEvent id="BoundaryEvent_PoliceTimeout" name="72h Timeout" attachedToRef="Task_WaitPoliceReport">
+        <bpmn:outgoing>Flow_PoliceTimeout</bpmn:outgoing>
+        <bpmn:timerEventDefinition id="TimerDef_PoliceTimeout">
+          <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT72H</bpmn:timeDuration>
+        </bpmn:timerEventDefinition>
+      </bpmn:boundaryEvent>
+
+      <bpmn:serviceTask id="Task_RequestPoliceReport" name="Request Police Report">
+        <bpmn:extensionElements>
+          <zeebe:taskDefinition type="request-police-report" />
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_PoliceTimeout</bpmn:incoming>
+        <bpmn:outgoing>Flow_PoliceRequested</bpmn:outgoing>
+      </bpmn:serviceTask>
+
+      <!-- Merge parallel branches -->
+      <bpmn:parallelGateway id="Gateway_ComplexMerge">
+        <bpmn:incoming>Flow_SeniorReviewDone</bpmn:incoming>
+        <bpmn:incoming>Flow_MedicalDone</bpmn:incoming>
+        <bpmn:incoming>Flow_ManualMedicalDone</bpmn:incoming>
+        <bpmn:incoming>Flow_PoliceReportReceived</bpmn:incoming>
+        <bpmn:incoming>Flow_PoliceRequested</bpmn:incoming>
+        <bpmn:outgoing>Flow_ComplexMerged</bpmn:outgoing>
+      </bpmn:parallelGateway>
+
+      <!-- Assess Injuries using DMN -->
+      <bpmn:businessRuleTask id="Task_AssessInjuries" name="Assess Injury Severity">
+        <bpmn:extensionElements>
+          <zeebe:calledDecision decisionId="injury-assessment-decision" resultVariable="injuryAssessment" />
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_ComplexMerged</bpmn:incoming>
+        <bpmn:outgoing>Flow_InjuryAssessed</bpmn:outgoing>
+      </bpmn:businessRuleTask>
+
+      <bpmn:endEvent id="End_Complex">
+        <bpmn:incoming>Flow_InjuryAssessed</bpmn:incoming>
+      </bpmn:endEvent>
+
+      <!-- Sequence Flows -->
+      <bpmn:sequenceFlow id="Flow_ComplexToParallel" sourceRef="Start_Complex" targetRef="Gateway_ComplexParallel" />
+      <bpmn:sequenceFlow id="Flow_ToSeniorReview" sourceRef="Gateway_ComplexParallel" targetRef="Task_SeniorReview" />
+      <bpmn:sequenceFlow id="Flow_ToMedicalNotify" sourceRef="Gateway_ComplexParallel" targetRef="Task_NotifyMedical" />
+      <bpmn:sequenceFlow id="Flow_ToPoliceReport" sourceRef="Gateway_ComplexParallel" targetRef="Task_WaitPoliceReport" />
+      <bpmn:sequenceFlow id="Flow_SeniorReviewDone" sourceRef="Task_SeniorReview" targetRef="Gateway_ComplexMerge" />
+      <bpmn:sequenceFlow id="Flow_SeniorEscalation" sourceRef="BoundaryEvent_SeniorSLA" targetRef="Task_EscalateSenior" />
+      <bpmn:sequenceFlow id="Flow_SeniorEscalationEnd" sourceRef="Task_EscalateSenior" targetRef="End_SeniorEscalation" />
+      <bpmn:sequenceFlow id="Flow_MedicalDone" sourceRef="Task_NotifyMedical" targetRef="Gateway_ComplexMerge" />
+      <bpmn:sequenceFlow id="Flow_MedicalFallback" sourceRef="BoundaryEvent_MedicalError" targetRef="Task_ManualMedicalNotify" />
+      <bpmn:sequenceFlow id="Flow_ManualMedicalDone" sourceRef="Task_ManualMedicalNotify" targetRef="Gateway_ComplexMerge" />
+      <bpmn:sequenceFlow id="Flow_PoliceReportReceived" sourceRef="Task_WaitPoliceReport" targetRef="Gateway_ComplexMerge" />
+      <bpmn:sequenceFlow id="Flow_PoliceTimeout" sourceRef="BoundaryEvent_PoliceTimeout" targetRef="Task_RequestPoliceReport" />
+      <bpmn:sequenceFlow id="Flow_PoliceRequested" sourceRef="Task_RequestPoliceReport" targetRef="Gateway_ComplexMerge" />
+      <bpmn:sequenceFlow id="Flow_ComplexMerged" sourceRef="Gateway_ComplexMerge" targetRef="Task_AssessInjuries" />
+      <bpmn:sequenceFlow id="Flow_InjuryAssessed" sourceRef="Task_AssessInjuries" targetRef="End_Complex" />
+    </bpmn:subProcess>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- STANDARD ROUTE SUB-PROCESS (Not Drivable - MEDIUM Severity)              -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <bpmn:subProcess id="SubProcess_Standard" name="Standard Case Handling">
+      <bpmn:incoming>Flow_ToStandard</bpmn:incoming>
+      <bpmn:outgoing>Flow_StandardToMerge</bpmn:outgoing>
+
+      <bpmn:startEvent id="Start_Standard">
+        <bpmn:outgoing>Flow_StandardStart</bpmn:outgoing>
+      </bpmn:startEvent>
+
+      <!-- Claims Team Review with SLA -->
+      <bpmn:userTask id="Task_ClaimsReview" name="Claims Team Review">
+        <bpmn:extensionElements>
+          <zeebe:assignmentDefinition candidateGroups="claims-handlers" />
+          <zeebe:formDefinition formKey="camunda-forms:bpmn:claims-review-form.form" />
+          <zeebe:taskSchedule dueDate="=now() + duration(slaDuration)" />
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_StandardStart</bpmn:incoming>
+        <bpmn:outgoing>Flow_ToTowingCheck</bpmn:outgoing>
+      </bpmn:userTask>
+
+      <!-- SLA Timer for Claims Review (24 hours for MEDIUM severity) -->
+      <bpmn:boundaryEvent id="BoundaryEvent_ClaimsSLA" name="24h SLA Breach" cancelActivity="false" attachedToRef="Task_ClaimsReview">
+        <bpmn:outgoing>Flow_ClaimsEscalation</bpmn:outgoing>
+        <bpmn:timerEventDefinition id="TimerDef_ClaimsSLA">
+          <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">=slaDuration</bpmn:timeDuration>
+        </bpmn:timerEventDefinition>
+      </bpmn:boundaryEvent>
+
+      <bpmn:serviceTask id="Task_EscalateClaims" name="Escalate to Supervisor">
+        <bpmn:extensionElements>
+          <zeebe:taskDefinition type="escalate-to-manager" />
+          <zeebe:taskHeaders>
+            <zeebe:header key="escalationType" value="claims-review-sla-breach" />
+            <zeebe:header key="severity" value="MEDIUM" />
+          </zeebe:taskHeaders>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_ClaimsEscalation</bpmn:incoming>
+        <bpmn:outgoing>Flow_ClaimsEscalationEnd</bpmn:outgoing>
+      </bpmn:serviceTask>
+
+      <bpmn:endEvent id="End_ClaimsEscalation">
+        <bpmn:incoming>Flow_ClaimsEscalationEnd</bpmn:incoming>
+      </bpmn:endEvent>
+
+      <!-- Towing Check Gateway -->
+      <bpmn:exclusiveGateway id="Gateway_TowingNeeded" name="Towing Needed?">
+        <bpmn:incoming>Flow_ToTowingCheck</bpmn:incoming>
+        <bpmn:outgoing>Flow_TowingYes</bpmn:outgoing>
+        <bpmn:outgoing>Flow_TowingNo</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+
+      <!-- Arrange Towing with Error Handling -->
+      <bpmn:serviceTask id="Task_ArrangeTowing" name="Arrange Towing Service">
+        <bpmn:extensionElements>
+          <zeebe:taskDefinition type="arrange-towing" retries="3" />
+          <zeebe:taskHeaders>
+            <zeebe:header key="serviceType" value="towing" />
+            <zeebe:header key="priority" value="=if drivable then \"normal\" else \"urgent\"" />
+          </zeebe:taskHeaders>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_TowingYes</bpmn:incoming>
+        <bpmn:outgoing>Flow_TowingDone</bpmn:outgoing>
+      </bpmn:serviceTask>
+
+      <!-- Error boundary for towing service failure -->
+      <bpmn:boundaryEvent id="BoundaryEvent_TowingError" name="Towing Failed" attachedToRef="Task_ArrangeTowing">
+        <bpmn:outgoing>Flow_TowingFallback</bpmn:outgoing>
+        <bpmn:errorEventDefinition id="ErrorDef_Towing" errorRef="Error_TowingFailed" />
+      </bpmn:boundaryEvent>
+
+      <bpmn:userTask id="Task_ManualTowing" name="Manual Towing Arrangement">
+        <bpmn:extensionElements>
+          <zeebe:assignmentDefinition candidateGroups="roadside-assistance" />
+          <zeebe:formDefinition formKey="camunda-forms:bpmn:manual-towing-form.form" />
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_TowingFallback</bpmn:incoming>
+        <bpmn:outgoing>Flow_ManualTowingDone</bpmn:outgoing>
+      </bpmn:userTask>
+
+      <!-- Merge Towing Paths -->
+      <bpmn:exclusiveGateway id="Gateway_MergeTowing">
+        <bpmn:incoming>Flow_TowingDone</bpmn:incoming>
+        <bpmn:incoming>Flow_TowingNo</bpmn:incoming>
+        <bpmn:incoming>Flow_ManualTowingDone</bpmn:incoming>
+        <bpmn:outgoing>Flow_ToDocumentCheck</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+
+      <!-- Wait for Customer Documents (Receive Task - supports boundary events) -->
+      <bpmn:receiveTask id="Task_WaitDocuments" name="Wait for Documents" messageRef="Message_DocumentsUploaded">
+        <bpmn:incoming>Flow_ToDocumentCheck</bpmn:incoming>
+        <bpmn:outgoing>Flow_DocumentsReceived</bpmn:outgoing>
+      </bpmn:receiveTask>
+
+      <!-- Timer boundary: Document upload timeout -->
+      <bpmn:boundaryEvent id="BoundaryEvent_DocumentTimeout" name="48h Timeout" attachedToRef="Task_WaitDocuments">
+        <bpmn:outgoing>Flow_DocumentReminder</bpmn:outgoing>
+        <bpmn:timerEventDefinition id="TimerDef_DocumentTimeout">
+          <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT48H</bpmn:timeDuration>
+        </bpmn:timerEventDefinition>
+      </bpmn:boundaryEvent>
+
+      <bpmn:serviceTask id="Task_SendReminder" name="Send Document Reminder">
+        <bpmn:extensionElements>
+          <zeebe:taskDefinition type="send-reminder-notification" />
+          <zeebe:taskHeaders>
+            <zeebe:header key="reminderType" value="document-upload" />
+          </zeebe:taskHeaders>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_DocumentReminder</bpmn:incoming>
+        <bpmn:outgoing>Flow_ReminderSent</bpmn:outgoing>
+      </bpmn:serviceTask>
+
+      <!-- Damage Assessment DMN -->
+      <bpmn:businessRuleTask id="Task_AssessDamage" name="Assess Damage Level">
+        <bpmn:extensionElements>
+          <zeebe:calledDecision decisionId="damage-assessment-decision" resultVariable="damageAssessment" />
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_DocumentsReceived</bpmn:incoming>
+        <bpmn:incoming>Flow_ReminderSent</bpmn:incoming>
+        <bpmn:outgoing>Flow_DamageAssessed</bpmn:outgoing>
+      </bpmn:businessRuleTask>
+
+      <bpmn:endEvent id="End_Standard">
+        <bpmn:incoming>Flow_DamageAssessed</bpmn:incoming>
+      </bpmn:endEvent>
+
+      <!-- Sequence Flows -->
+      <bpmn:sequenceFlow id="Flow_StandardStart" sourceRef="Start_Standard" targetRef="Task_ClaimsReview" />
+      <bpmn:sequenceFlow id="Flow_ToTowingCheck" sourceRef="Task_ClaimsReview" targetRef="Gateway_TowingNeeded" />
+      <bpmn:sequenceFlow id="Flow_ClaimsEscalation" sourceRef="BoundaryEvent_ClaimsSLA" targetRef="Task_EscalateClaims" />
+      <bpmn:sequenceFlow id="Flow_ClaimsEscalationEnd" sourceRef="Task_EscalateClaims" targetRef="End_ClaimsEscalation" />
+      <bpmn:sequenceFlow id="Flow_TowingYes" sourceRef="Gateway_TowingNeeded" targetRef="Task_ArrangeTowing">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=drivable = false</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_TowingNo" sourceRef="Gateway_TowingNeeded" targetRef="Gateway_MergeTowing">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=drivable = true</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_TowingDone" sourceRef="Task_ArrangeTowing" targetRef="Gateway_MergeTowing" />
+      <bpmn:sequenceFlow id="Flow_TowingFallback" sourceRef="BoundaryEvent_TowingError" targetRef="Task_ManualTowing" />
+      <bpmn:sequenceFlow id="Flow_ManualTowingDone" sourceRef="Task_ManualTowing" targetRef="Gateway_MergeTowing" />
+      <bpmn:sequenceFlow id="Flow_ToDocumentCheck" sourceRef="Gateway_MergeTowing" targetRef="Task_WaitDocuments" />
+      <bpmn:sequenceFlow id="Flow_DocumentReminder" sourceRef="BoundaryEvent_DocumentTimeout" targetRef="Task_SendReminder" />
+      <bpmn:sequenceFlow id="Flow_DocumentsReceived" sourceRef="Task_WaitDocuments" targetRef="Task_AssessDamage" />
+      <bpmn:sequenceFlow id="Flow_ReminderSent" sourceRef="Task_SendReminder" targetRef="Task_AssessDamage" />
+      <bpmn:sequenceFlow id="Flow_DamageAssessed" sourceRef="Task_AssessDamage" targetRef="End_Standard" />
+    </bpmn:subProcess>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- FAST-TRACK ROUTE SUB-PROCESS (TPL/Fleet - LOW Severity)                  -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <bpmn:subProcess id="SubProcess_FastTrack" name="Fast-Track Processing">
+      <bpmn:incoming>Flow_ToFastTrack</bpmn:incoming>
+      <bpmn:outgoing>Flow_FastTrackToMerge</bpmn:outgoing>
+
+      <bpmn:startEvent id="Start_FastTrack">
+        <bpmn:outgoing>Flow_FastTrackStart</bpmn:outgoing>
+      </bpmn:startEvent>
+
+      <!-- Auto-Validate with AI -->
+      <bpmn:serviceTask id="Task_AutoValidate" name="AI-Powered Validation">
+        <bpmn:extensionElements>
+          <zeebe:taskDefinition type="auto-validate-claim" retries="3" />
+          <zeebe:taskHeaders>
+            <zeebe:header key="validationType" value="ai-enhanced" />
+            <zeebe:header key="confidenceThreshold" value="0.85" />
+          </zeebe:taskHeaders>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_FastTrackStart</bpmn:incoming>
+        <bpmn:outgoing>Flow_ToAutoApprovalCheck</bpmn:outgoing>
+      </bpmn:serviceTask>
+
+      <!-- Check if auto-approval is possible -->
+      <bpmn:exclusiveGateway id="Gateway_AutoApprovalCheck" name="Auto-Approve?">
+        <bpmn:incoming>Flow_ToAutoApprovalCheck</bpmn:incoming>
+        <bpmn:outgoing>Flow_AutoApproveYes</bpmn:outgoing>
+        <bpmn:outgoing>Flow_AutoApproveNo</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+
+      <!-- Auto-Approve Path -->
+      <bpmn:serviceTask id="Task_AutoApprove" name="Auto-Approve Claim">
+        <bpmn:extensionElements>
+          <zeebe:taskDefinition type="auto-approve-claim" />
+          <zeebe:taskHeaders>
+            <zeebe:header key="approvalType" value="automatic" />
+          </zeebe:taskHeaders>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_AutoApproveYes</bpmn:incoming>
+        <bpmn:outgoing>Flow_AutoApproved</bpmn:outgoing>
+      </bpmn:serviceTask>
+
+      <!-- Quick Human Review for edge cases -->
+      <bpmn:userTask id="Task_QuickReview" name="Quick Human Review">
+        <bpmn:extensionElements>
+          <zeebe:assignmentDefinition candidateGroups="claims-handlers" />
+          <zeebe:formDefinition formKey="camunda-forms:bpmn:quick-review-form.form" />
+          <zeebe:taskSchedule dueDate="=now() + duration(\"PT4H\")" />
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_AutoApproveNo</bpmn:incoming>
+        <bpmn:outgoing>Flow_QuickReviewDone</bpmn:outgoing>
+      </bpmn:userTask>
+
+      <!-- SLA Timer for Quick Review (48 hours for LOW severity) -->
+      <bpmn:boundaryEvent id="BoundaryEvent_QuickSLA" name="48h SLA" cancelActivity="false" attachedToRef="Task_QuickReview">
+        <bpmn:outgoing>Flow_QuickEscalation</bpmn:outgoing>
+        <bpmn:timerEventDefinition id="TimerDef_QuickSLA">
+          <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">=slaDuration</bpmn:timeDuration>
+        </bpmn:timerEventDefinition>
+      </bpmn:boundaryEvent>
+
+      <bpmn:serviceTask id="Task_EscalateQuick" name="Escalate to Team Lead">
+        <bpmn:extensionElements>
+          <zeebe:taskDefinition type="escalate-to-manager" />
+          <zeebe:taskHeaders>
+            <zeebe:header key="escalationType" value="quick-review-sla-breach" />
+            <zeebe:header key="severity" value="LOW" />
+          </zeebe:taskHeaders>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_QuickEscalation</bpmn:incoming>
+        <bpmn:outgoing>Flow_QuickEscalationEnd</bpmn:outgoing>
+      </bpmn:serviceTask>
+
+      <bpmn:endEvent id="End_QuickEscalation">
+        <bpmn:incoming>Flow_QuickEscalationEnd</bpmn:incoming>
+      </bpmn:endEvent>
+
+      <!-- Merge Fast-Track paths -->
+      <bpmn:exclusiveGateway id="Gateway_FastTrackMerge">
+        <bpmn:incoming>Flow_AutoApproved</bpmn:incoming>
+        <bpmn:incoming>Flow_QuickReviewDone</bpmn:incoming>
+        <bpmn:outgoing>Flow_FastTrackEnd</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+
+      <bpmn:endEvent id="End_FastTrack">
+        <bpmn:incoming>Flow_FastTrackEnd</bpmn:incoming>
+      </bpmn:endEvent>
+
+      <!-- Sequence Flows -->
+      <bpmn:sequenceFlow id="Flow_FastTrackStart" sourceRef="Start_FastTrack" targetRef="Task_AutoValidate" />
+      <bpmn:sequenceFlow id="Flow_ToAutoApprovalCheck" sourceRef="Task_AutoValidate" targetRef="Gateway_AutoApprovalCheck" />
+      <bpmn:sequenceFlow id="Flow_AutoApproveYes" sourceRef="Gateway_AutoApprovalCheck" targetRef="Task_AutoApprove">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=validationConfidence >= 0.85</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_AutoApproveNo" sourceRef="Gateway_AutoApprovalCheck" targetRef="Task_QuickReview">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=validationConfidence &lt; 0.85</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_AutoApproved" sourceRef="Task_AutoApprove" targetRef="Gateway_FastTrackMerge" />
+      <bpmn:sequenceFlow id="Flow_QuickReviewDone" sourceRef="Task_QuickReview" targetRef="Gateway_FastTrackMerge" />
+      <bpmn:sequenceFlow id="Flow_QuickEscalation" sourceRef="BoundaryEvent_QuickSLA" targetRef="Task_EscalateQuick" />
+      <bpmn:sequenceFlow id="Flow_QuickEscalationEnd" sourceRef="Task_EscalateQuick" targetRef="End_QuickEscalation" />
+      <bpmn:sequenceFlow id="Flow_FastTrackEnd" sourceRef="Gateway_FastTrackMerge" targetRef="End_FastTrack" />
+    </bpmn:subProcess>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- MERGE GATEWAY                                                            -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <bpmn:exclusiveGateway id="Gateway_Merge">
+      <bpmn:incoming>Flow_ComplexToMerge</bpmn:incoming>
+      <bpmn:incoming>Flow_StandardToMerge</bpmn:incoming>
+      <bpmn:incoming>Flow_FastTrackToMerge</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToSettlement</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- SETTLEMENT CALCULATION (DMN)                                             -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <bpmn:businessRuleTask id="Task_CalculateSettlement" name="Calculate Settlement">
+      <bpmn:extensionElements>
+        <zeebe:calledDecision decisionId="settlement-calculation-decision" resultVariable="settlementDecision" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToSettlement</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToApprovalCheck</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- SETTLEMENT APPROVAL CHECK                                                -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <bpmn:exclusiveGateway id="Gateway_ApprovalNeeded" name="Manager Approval Needed?">
+      <bpmn:incoming>Flow_ToApprovalCheck</bpmn:incoming>
+      <bpmn:outgoing>Flow_ApprovalYes</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ApprovalNo</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:userTask id="Task_ManagerApproval" name="Manager Approval">
+      <bpmn:extensionElements>
+        <zeebe:assignmentDefinition candidateGroups="claims-managers" />
+        <zeebe:formDefinition formKey="camunda-forms:bpmn:manager-approval-form.form" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ApprovalYes</bpmn:incoming>
+      <bpmn:outgoing>Flow_ApprovalDecision</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:exclusiveGateway id="Gateway_MergeApproval">
+      <bpmn:incoming>Flow_ApprovalNo</bpmn:incoming>
+      <bpmn:incoming>Flow_ApprovalDecision</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToPayment</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- PAYMENT PROCESSING                                                       -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <bpmn:serviceTask id="Task_ProcessPayment" name="Process Payment">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="process-payment" retries="3" />
+        <zeebe:taskHeaders>
+          <zeebe:header key="paymentMethod" value="bank-transfer" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToPayment</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToNotification</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Error boundary for payment failure -->
+    <bpmn:boundaryEvent id="BoundaryEvent_PaymentError" name="Payment Failed" attachedToRef="Task_ProcessPayment">
+      <bpmn:outgoing>Flow_PaymentFallback</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="ErrorDef_Payment" errorRef="Error_PaymentFailed" />
+    </bpmn:boundaryEvent>
+
+    <bpmn:userTask id="Task_ManualPayment" name="Manual Payment Processing">
+      <bpmn:extensionElements>
+        <zeebe:assignmentDefinition candidateGroups="finance-team" />
+        <zeebe:formDefinition formKey="camunda-forms:bpmn:manual-payment-form.form" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_PaymentFallback</bpmn:incoming>
+      <bpmn:outgoing>Flow_ManualPaymentDone</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:exclusiveGateway id="Gateway_MergePayment">
+      <bpmn:incoming>Flow_ToNotification</bpmn:incoming>
+      <bpmn:incoming>Flow_ManualPaymentDone</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToFinalNotification</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- CUSTOMER NOTIFICATION                                                    -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <bpmn:serviceTask id="Task_SendNotification" name="Send Customer Notification">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="send-customer-notification" retries="3" />
+        <zeebe:taskHeaders>
+          <zeebe:header key="channels" value="email,sms,push" />
+          <zeebe:header key="template" value="claim-completed" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToFinalNotification</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- REJECTED CLAIM PATH                                                      -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <bpmn:serviceTask id="Task_SendRejection" name="Send Rejection Notification">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="send-customer-notification" />
+        <zeebe:taskHeaders>
+          <zeebe:header key="template" value="claim-rejected" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_FraudRejected</bpmn:incoming>
+      <bpmn:incoming>Flow_ValidationErrorToReview</bpmn:incoming>
+      <bpmn:outgoing>Flow_RejectionToEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="EndEvent_ClaimRejected" name="Claim Rejected">
+      <bpmn:incoming>Flow_RejectionToEnd</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- END EVENT                                                                -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <bpmn:endEvent id="EndEvent_FnolProcessed" name="FNOL Processed Successfully">
+      <bpmn:incoming>Flow_ToEnd</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- MAIN SEQUENCE FLOWS                                                      -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <bpmn:sequenceFlow id="Flow_ToValidation" sourceRef="StartEvent_FnolReceived" targetRef="Task_ValidateClaim" />
+    <bpmn:sequenceFlow id="Flow_ValidationErrorToReview" sourceRef="BoundaryEvent_ValidationError" targetRef="Task_SendRejection" />
+    <bpmn:sequenceFlow id="Flow_ToFraudCheck" sourceRef="Task_ValidateClaim" targetRef="CallActivity_FraudCheck" />
+    <bpmn:sequenceFlow id="Flow_ToFraudGateway" sourceRef="CallActivity_FraudCheck" targetRef="Gateway_FraudCheck" />
+    <bpmn:sequenceFlow id="Flow_FraudHigh" sourceRef="Gateway_FraudCheck" targetRef="Task_FraudInvestigation">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=fraudScore >= 70 or fraudRequiresReview = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_FraudLow" sourceRef="Gateway_FraudCheck" targetRef="Task_DetermineRouting">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=fraudScore &lt; 70 and fraudRequiresReview = false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_FraudEscalation" sourceRef="BoundaryEvent_FraudSLA" targetRef="Task_EscalateFraud" />
+    <bpmn:sequenceFlow id="Flow_FraudEscalationEnd" sourceRef="Task_EscalateFraud" targetRef="EndEvent_FraudEscalation" />
+    <bpmn:sequenceFlow id="Flow_FraudInvestigationDone" sourceRef="Task_FraudInvestigation" targetRef="Gateway_FraudDecision" />
+    <bpmn:sequenceFlow id="Flow_FraudApproved" sourceRef="Gateway_FraudDecision" targetRef="Task_DetermineRouting">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=fraudDecision = "approved"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_FraudRejected" sourceRef="Gateway_FraudDecision" targetRef="Task_SendRejection">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=fraudDecision = "rejected"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ToRoutingGateway" sourceRef="Task_DetermineRouting" targetRef="Task_CalculateSLA" />
+    <bpmn:sequenceFlow id="Flow_ToRouteGateway" sourceRef="Task_CalculateSLA" targetRef="Gateway_Routing" />
+    <bpmn:sequenceFlow id="Flow_ToComplex" sourceRef="Gateway_Routing" targetRef="SubProcess_Complex">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=routingDecision.route = "complex"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ToStandard" sourceRef="Gateway_Routing" targetRef="SubProcess_Standard">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=routingDecision.route = "standard"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ToFastTrack" sourceRef="Gateway_Routing" targetRef="SubProcess_FastTrack">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=routingDecision.route = "fast-track"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ComplexToMerge" sourceRef="SubProcess_Complex" targetRef="Gateway_Merge" />
+    <bpmn:sequenceFlow id="Flow_StandardToMerge" sourceRef="SubProcess_Standard" targetRef="Gateway_Merge" />
+    <bpmn:sequenceFlow id="Flow_FastTrackToMerge" sourceRef="SubProcess_FastTrack" targetRef="Gateway_Merge" />
+    <bpmn:sequenceFlow id="Flow_ToSettlement" sourceRef="Gateway_Merge" targetRef="Task_CalculateSettlement" />
+    <bpmn:sequenceFlow id="Flow_ToApprovalCheck" sourceRef="Task_CalculateSettlement" targetRef="Gateway_ApprovalNeeded" />
+    <bpmn:sequenceFlow id="Flow_ApprovalYes" sourceRef="Gateway_ApprovalNeeded" targetRef="Task_ManagerApproval">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=settlementDecision.requiresApproval = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ApprovalNo" sourceRef="Gateway_ApprovalNeeded" targetRef="Gateway_MergeApproval">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=settlementDecision.requiresApproval = false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ApprovalDecision" sourceRef="Task_ManagerApproval" targetRef="Gateway_MergeApproval" />
+    <bpmn:sequenceFlow id="Flow_ToPayment" sourceRef="Gateway_MergeApproval" targetRef="Task_ProcessPayment" />
+    <bpmn:sequenceFlow id="Flow_PaymentFallback" sourceRef="BoundaryEvent_PaymentError" targetRef="Task_ManualPayment" />
+    <bpmn:sequenceFlow id="Flow_ManualPaymentDone" sourceRef="Task_ManualPayment" targetRef="Gateway_MergePayment" />
+    <bpmn:sequenceFlow id="Flow_ToNotification" sourceRef="Task_ProcessPayment" targetRef="Gateway_MergePayment" />
+    <bpmn:sequenceFlow id="Flow_ToFinalNotification" sourceRef="Gateway_MergePayment" targetRef="Task_SendNotification" />
+    <bpmn:sequenceFlow id="Flow_ToEnd" sourceRef="Task_SendNotification" targetRef="EndEvent_FnolProcessed" />
+    <bpmn:sequenceFlow id="Flow_RejectionToEnd" sourceRef="Task_SendRejection" targetRef="EndEvent_ClaimRejected" />
+
+  </bpmn:process>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- MESSAGE DEFINITIONS                                                      -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <bpmn:message id="Message_PoliceReport" name="police-report-received">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="=fnolId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+
+  <bpmn:message id="Message_DocumentsUploaded" name="documents-uploaded">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="=fnolId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- ERROR DEFINITIONS                                                        -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <bpmn:error id="Error_ValidationFailed" name="Validation Failed" errorCode="VALIDATION_ERROR" />
+  <bpmn:error id="Error_NotificationFailed" name="Notification Failed" errorCode="NOTIFICATION_ERROR" />
+  <bpmn:error id="Error_TowingFailed" name="Towing Service Failed" errorCode="TOWING_ERROR" />
+  <bpmn:error id="Error_PaymentFailed" name="Payment Failed" errorCode="PAYMENT_ERROR" />
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- DIAGRAM INFORMATION (Auto-layout by Camunda Modeler)                    -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="gcc-motor-fnol-process">
+      <!-- Start Event -->
+      <bpmndi:BPMNShape id="StartEvent_FnolReceived_di" bpmnElement="StartEvent_FnolReceived">
+        <dc:Bounds x="152" y="332" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="133" y="375" width="74" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <!-- Validate Claim -->
+      <bpmndi:BPMNShape id="Task_ValidateClaim_di" bpmnElement="Task_ValidateClaim">
+        <dc:Bounds x="240" y="310" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BoundaryEvent_ValidationError_di" bpmnElement="BoundaryEvent_ValidationError">
+        <dc:Bounds x="272" y="372" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <!-- Call Activity: Fraud Check -->
+      <bpmndi:BPMNShape id="CallActivity_FraudCheck_di" bpmnElement="CallActivity_FraudCheck">
+        <dc:Bounds x="390" y="310" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <!-- Fraud Gateway -->
+      <bpmndi:BPMNShape id="Gateway_FraudCheck_di" bpmnElement="Gateway_FraudCheck" isMarkerVisible="true">
+        <dc:Bounds x="545" y="325" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="533" y="382" width="75" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <!-- Fraud Investigation -->
+      <bpmndi:BPMNShape id="Task_FraudInvestigation_di" bpmnElement="Task_FraudInvestigation">
+        <dc:Bounds x="520" y="180" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BoundaryEvent_FraudSLA_di" bpmnElement="BoundaryEvent_FraudSLA">
+        <dc:Bounds x="602" y="162" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <!-- Fraud Decision Gateway -->
+      <bpmndi:BPMNShape id="Gateway_FraudDecision_di" bpmnElement="Gateway_FraudDecision" isMarkerVisible="true">
+        <dc:Bounds x="675" y="195" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <!-- Escalate Fraud -->
+      <bpmndi:BPMNShape id="Task_EscalateFraud_di" bpmnElement="Task_EscalateFraud">
+        <dc:Bounds x="670" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_FraudEscalation_di" bpmnElement="EndEvent_FraudEscalation">
+        <dc:Bounds x="822" y="102" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <!-- Determine Routing -->
+      <bpmndi:BPMNShape id="Task_DetermineRouting_di" bpmnElement="Task_DetermineRouting">
+        <dc:Bounds x="650" y="310" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <!-- Calculate SLA -->
+      <bpmndi:BPMNShape id="Task_CalculateSLA_di" bpmnElement="Task_CalculateSLA">
+        <dc:Bounds x="800" y="310" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <!-- Routing Gateway -->
+      <bpmndi:BPMNShape id="Gateway_Routing_di" bpmnElement="Gateway_Routing" isMarkerVisible="true">
+        <dc:Bounds x="955" y="325" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="949" y="382" width="63" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <!-- Sub-Processes (collapsed for clarity) -->
+      <bpmndi:BPMNShape id="SubProcess_Complex_di" bpmnElement="SubProcess_Complex" isExpanded="false">
+        <dc:Bounds x="1060" y="160" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="SubProcess_Standard_di" bpmnElement="SubProcess_Standard" isExpanded="false">
+        <dc:Bounds x="1060" y="310" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="SubProcess_FastTrack_di" bpmnElement="SubProcess_FastTrack" isExpanded="false">
+        <dc:Bounds x="1060" y="460" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <!-- Merge Gateway -->
+      <bpmndi:BPMNShape id="Gateway_Merge_di" bpmnElement="Gateway_Merge" isMarkerVisible="true">
+        <dc:Bounds x="1215" y="325" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <!-- Calculate Settlement -->
+      <bpmndi:BPMNShape id="Task_CalculateSettlement_di" bpmnElement="Task_CalculateSettlement">
+        <dc:Bounds x="1320" y="310" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <!-- Approval Gateway -->
+      <bpmndi:BPMNShape id="Gateway_ApprovalNeeded_di" bpmnElement="Gateway_ApprovalNeeded" isMarkerVisible="true">
+        <dc:Bounds x="1475" y="325" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <!-- Manager Approval -->
+      <bpmndi:BPMNShape id="Task_ManagerApproval_di" bpmnElement="Task_ManagerApproval">
+        <dc:Bounds x="1450" y="180" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <!-- Merge Approval -->
+      <bpmndi:BPMNShape id="Gateway_MergeApproval_di" bpmnElement="Gateway_MergeApproval" isMarkerVisible="true">
+        <dc:Bounds x="1585" y="325" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <!-- Process Payment -->
+      <bpmndi:BPMNShape id="Task_ProcessPayment_di" bpmnElement="Task_ProcessPayment">
+        <dc:Bounds x="1690" y="310" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BoundaryEvent_PaymentError_di" bpmnElement="BoundaryEvent_PaymentError">
+        <dc:Bounds x="1722" y="372" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <!-- Manual Payment -->
+      <bpmndi:BPMNShape id="Task_ManualPayment_di" bpmnElement="Task_ManualPayment">
+        <dc:Bounds x="1690" y="460" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <!-- Merge Payment -->
+      <bpmndi:BPMNShape id="Gateway_MergePayment_di" bpmnElement="Gateway_MergePayment" isMarkerVisible="true">
+        <dc:Bounds x="1845" y="325" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <!-- Send Notification -->
+      <bpmndi:BPMNShape id="Task_SendNotification_di" bpmnElement="Task_SendNotification">
+        <dc:Bounds x="1950" y="310" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <!-- End Event -->
+      <bpmndi:BPMNShape id="EndEvent_FnolProcessed_di" bpmnElement="EndEvent_FnolProcessed">
+        <dc:Bounds x="2102" y="332" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2083" y="375" width="74" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <!-- Rejection Path -->
+      <bpmndi:BPMNShape id="Task_SendRejection_di" bpmnElement="Task_SendRejection">
+        <dc:Bounds x="520" y="460" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_ClaimRejected_di" bpmnElement="EndEvent_ClaimRejected">
+        <dc:Bounds x="672" y="482" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <!-- Main Flow Edges -->
+      <bpmndi:BPMNEdge id="Flow_ToValidation_di" bpmnElement="Flow_ToValidation">
+        <di:waypoint x="188" y="350" />
+        <di:waypoint x="240" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToFraudCheck_di" bpmnElement="Flow_ToFraudCheck">
+        <di:waypoint x="340" y="350" />
+        <di:waypoint x="390" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToFraudGateway_di" bpmnElement="Flow_ToFraudGateway">
+        <di:waypoint x="490" y="350" />
+        <di:waypoint x="545" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_FraudHigh_di" bpmnElement="Flow_FraudHigh">
+        <di:waypoint x="570" y="325" />
+        <di:waypoint x="570" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_FraudLow_di" bpmnElement="Flow_FraudLow">
+        <di:waypoint x="595" y="350" />
+        <di:waypoint x="650" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_FraudInvestigationDone_di" bpmnElement="Flow_FraudInvestigationDone">
+        <di:waypoint x="620" y="220" />
+        <di:waypoint x="675" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_FraudApproved_di" bpmnElement="Flow_FraudApproved">
+        <di:waypoint x="700" y="245" />
+        <di:waypoint x="700" y="310" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_FraudRejected_di" bpmnElement="Flow_FraudRejected">
+        <di:waypoint x="700" y="245" />
+        <di:waypoint x="700" y="280" />
+        <di:waypoint x="570" y="280" />
+        <di:waypoint x="570" y="460" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToRoutingGateway_di" bpmnElement="Flow_ToRoutingGateway">
+        <di:waypoint x="750" y="350" />
+        <di:waypoint x="800" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToRouteGateway_di" bpmnElement="Flow_ToRouteGateway">
+        <di:waypoint x="900" y="350" />
+        <di:waypoint x="955" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToComplex_di" bpmnElement="Flow_ToComplex">
+        <di:waypoint x="980" y="325" />
+        <di:waypoint x="980" y="200" />
+        <di:waypoint x="1060" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToStandard_di" bpmnElement="Flow_ToStandard">
+        <di:waypoint x="1005" y="350" />
+        <di:waypoint x="1060" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToFastTrack_di" bpmnElement="Flow_ToFastTrack">
+        <di:waypoint x="980" y="375" />
+        <di:waypoint x="980" y="500" />
+        <di:waypoint x="1060" y="500" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ComplexToMerge_di" bpmnElement="Flow_ComplexToMerge">
+        <di:waypoint x="1160" y="200" />
+        <di:waypoint x="1240" y="200" />
+        <di:waypoint x="1240" y="325" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_StandardToMerge_di" bpmnElement="Flow_StandardToMerge">
+        <di:waypoint x="1160" y="350" />
+        <di:waypoint x="1215" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_FastTrackToMerge_di" bpmnElement="Flow_FastTrackToMerge">
+        <di:waypoint x="1160" y="500" />
+        <di:waypoint x="1240" y="500" />
+        <di:waypoint x="1240" y="375" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToSettlement_di" bpmnElement="Flow_ToSettlement">
+        <di:waypoint x="1265" y="350" />
+        <di:waypoint x="1320" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToApprovalCheck_di" bpmnElement="Flow_ToApprovalCheck">
+        <di:waypoint x="1420" y="350" />
+        <di:waypoint x="1475" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ApprovalYes_di" bpmnElement="Flow_ApprovalYes">
+        <di:waypoint x="1500" y="325" />
+        <di:waypoint x="1500" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ApprovalNo_di" bpmnElement="Flow_ApprovalNo">
+        <di:waypoint x="1525" y="350" />
+        <di:waypoint x="1585" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ApprovalDecision_di" bpmnElement="Flow_ApprovalDecision">
+        <di:waypoint x="1550" y="220" />
+        <di:waypoint x="1610" y="220" />
+        <di:waypoint x="1610" y="325" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToPayment_di" bpmnElement="Flow_ToPayment">
+        <di:waypoint x="1635" y="350" />
+        <di:waypoint x="1690" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToNotification_di" bpmnElement="Flow_ToNotification">
+        <di:waypoint x="1790" y="350" />
+        <di:waypoint x="1845" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_PaymentFallback_di" bpmnElement="Flow_PaymentFallback">
+        <di:waypoint x="1740" y="408" />
+        <di:waypoint x="1740" y="460" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ManualPaymentDone_di" bpmnElement="Flow_ManualPaymentDone">
+        <di:waypoint x="1790" y="500" />
+        <di:waypoint x="1870" y="500" />
+        <di:waypoint x="1870" y="375" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToFinalNotification_di" bpmnElement="Flow_ToFinalNotification">
+        <di:waypoint x="1895" y="350" />
+        <di:waypoint x="1950" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToEnd_di" bpmnElement="Flow_ToEnd">
+        <di:waypoint x="2050" y="350" />
+        <di:waypoint x="2102" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ValidationErrorToReview_di" bpmnElement="Flow_ValidationErrorToReview">
+        <di:waypoint x="290" y="408" />
+        <di:waypoint x="290" y="500" />
+        <di:waypoint x="520" y="500" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_RejectionToEnd_di" bpmnElement="Flow_RejectionToEnd">
+        <di:waypoint x="620" y="500" />
+        <di:waypoint x="672" y="500" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_FraudEscalation_di" bpmnElement="Flow_FraudEscalation">
+        <di:waypoint x="620" y="162" />
+        <di:waypoint x="620" y="120" />
+        <di:waypoint x="670" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_FraudEscalationEnd_di" bpmnElement="Flow_FraudEscalationEnd">
+        <di:waypoint x="770" y="120" />
+        <di:waypoint x="822" y="120" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</bpmn:definitions>

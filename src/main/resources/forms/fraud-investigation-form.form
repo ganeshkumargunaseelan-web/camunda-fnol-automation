@@ -1,0 +1,218 @@
+{
+  "schemaVersion": 16,
+  "exporter": {
+    "name": "GCC Motor FNOL Starter Kit",
+    "version": "1.0.0"
+  },
+  "components": [
+    {
+      "text": "# Fraud Investigation Form\n\n**WARNING:** This claim has been flagged for potential fraud. Please conduct a thorough investigation.",
+      "type": "text",
+      "id": "Field_Header"
+    },
+    {
+      "label": "FNOL Reference",
+      "type": "textfield",
+      "id": "Field_FnolId",
+      "key": "fnolId",
+      "disabled": true
+    },
+    {
+      "label": "Fraud Score",
+      "type": "number",
+      "id": "Field_FraudScore",
+      "key": "fraudScore",
+      "disabled": true,
+      "description": "Score out of 100 (higher = more suspicious)"
+    },
+    {
+      "text": "## Fraud Indicators Detected",
+      "type": "text",
+      "id": "Field_IndicatorsSection"
+    },
+    {
+      "label": "Fraud Indicators",
+      "type": "textarea",
+      "id": "Field_Indicators",
+      "key": "fraudIndicators",
+      "disabled": true,
+      "description": "System-detected fraud indicators"
+    },
+    {
+      "text": "## Claim Details",
+      "type": "text",
+      "id": "Field_ClaimSection"
+    },
+    {
+      "label": "Reporter Name",
+      "type": "textfield",
+      "id": "Field_ReporterName",
+      "key": "reporterName",
+      "disabled": true
+    },
+    {
+      "label": "National ID",
+      "type": "textfield",
+      "id": "Field_NationalId",
+      "key": "nationalId",
+      "disabled": true
+    },
+    {
+      "label": "Mobile Number",
+      "type": "textfield",
+      "id": "Field_Mobile",
+      "key": "mobileNumber",
+      "disabled": true
+    },
+    {
+      "label": "Policy Number",
+      "type": "textfield",
+      "id": "Field_PolicyNumber",
+      "key": "policyNumber",
+      "disabled": true
+    },
+    {
+      "label": "Incident Date",
+      "type": "textfield",
+      "id": "Field_IncidentDate",
+      "key": "incidentDate",
+      "disabled": true
+    },
+    {
+      "label": "Incident Location",
+      "type": "textfield",
+      "id": "Field_Location",
+      "key": "incidentLocation",
+      "disabled": true
+    },
+    {
+      "label": "Description",
+      "type": "textarea",
+      "id": "Field_Description",
+      "key": "description",
+      "disabled": true
+    },
+    {
+      "text": "---\n\n## Investigation Findings",
+      "type": "text",
+      "id": "Field_InvestigationSection"
+    },
+    {
+      "label": "Verification Steps Completed",
+      "type": "checklist",
+      "id": "Field_VerificationSteps",
+      "key": "verificationSteps",
+      "validate": {
+        "required": true
+      },
+      "values": [
+        { "label": "Identity verification completed", "value": "IDENTITY_VERIFIED" },
+        { "label": "Policy validity confirmed", "value": "POLICY_VERIFIED" },
+        { "label": "Incident location verified", "value": "LOCATION_VERIFIED" },
+        { "label": "Vehicle ownership confirmed", "value": "VEHICLE_VERIFIED" },
+        { "label": "Witness statements collected", "value": "WITNESSES_COLLECTED" },
+        { "label": "Police report obtained", "value": "POLICE_REPORT" },
+        { "label": "Photos/evidence reviewed", "value": "EVIDENCE_REVIEWED" },
+        { "label": "Previous claims history checked", "value": "HISTORY_CHECKED" }
+      ]
+    },
+    {
+      "label": "Contact Verification Result",
+      "type": "select",
+      "id": "Field_ContactVerification",
+      "key": "contactVerificationResult",
+      "validate": {
+        "required": true
+      },
+      "values": [
+        { "label": "Verified - Contact details confirmed", "value": "VERIFIED" },
+        { "label": "Partial - Some details could not be verified", "value": "PARTIAL" },
+        { "label": "Failed - Unable to reach claimant", "value": "FAILED" },
+        { "label": "Suspicious - Inconsistent responses", "value": "SUSPICIOUS" }
+      ]
+    },
+    {
+      "label": "Documents Authenticity",
+      "type": "select",
+      "id": "Field_DocumentAuth",
+      "key": "documentsAuthenticity",
+      "validate": {
+        "required": true
+      },
+      "values": [
+        { "label": "Authentic - All documents verified", "value": "AUTHENTIC" },
+        { "label": "Questionable - Some documents need verification", "value": "QUESTIONABLE" },
+        { "label": "Fraudulent - Forged/altered documents detected", "value": "FRAUDULENT" },
+        { "label": "Missing - Required documents not provided", "value": "MISSING" }
+      ]
+    },
+    {
+      "label": "Fraud Investigation Notes",
+      "type": "textarea",
+      "id": "Field_InvestigationNotes",
+      "key": "investigationNotes",
+      "validate": {
+        "required": true,
+        "minLength": 100
+      },
+      "description": "Provide detailed investigation findings (minimum 100 characters)"
+    },
+    {
+      "label": "Evidence of Fraud Found",
+      "type": "checklist",
+      "id": "Field_FraudEvidence",
+      "key": "fraudEvidenceFound",
+      "values": [
+        { "label": "Staged accident", "value": "STAGED" },
+        { "label": "Inflated damages", "value": "INFLATED" },
+        { "label": "False injury claims", "value": "FALSE_INJURY" },
+        { "label": "Identity fraud", "value": "IDENTITY_FRAUD" },
+        { "label": "Document forgery", "value": "FORGERY" },
+        { "label": "Collusion with third party", "value": "COLLUSION" },
+        { "label": "Duplicate claim attempt", "value": "DUPLICATE" },
+        { "label": "Pre-existing damage", "value": "PRE_EXISTING" }
+      ]
+    },
+    {
+      "label": "Final Investigation Decision",
+      "type": "select",
+      "id": "Field_Decision",
+      "key": "fraudDecision",
+      "validate": {
+        "required": true
+      },
+      "values": [
+        { "label": "Approved - No fraud, proceed with claim", "value": "approved" },
+        { "label": "Approved with Conditions - Limited settlement", "value": "approved_conditional" },
+        { "label": "Rejected - Fraud confirmed", "value": "rejected" },
+        { "label": "Refer to Legal - Requires legal action", "value": "refer_legal" },
+        { "label": "Refer to Police - Criminal investigation needed", "value": "refer_police" }
+      ]
+    },
+    {
+      "label": "Recommended Actions",
+      "type": "checklist",
+      "id": "Field_RecommendedActions",
+      "key": "recommendedActions",
+      "values": [
+        { "label": "Add to fraud watchlist", "value": "WATCHLIST" },
+        { "label": "Blacklist policyholder", "value": "BLACKLIST" },
+        { "label": "Cancel policy", "value": "CANCEL_POLICY" },
+        { "label": "Report to insurance authority", "value": "REPORT_AUTHORITY" },
+        { "label": "File police report", "value": "POLICE_REPORT" },
+        { "label": "Recover previous fraudulent claims", "value": "RECOVERY" }
+      ]
+    },
+    {
+      "label": "I confirm this investigation is complete and findings are accurate",
+      "type": "checkbox",
+      "id": "Field_Confirm",
+      "key": "investigationConfirmed",
+      "validate": {
+        "required": true
+      }
+    }
+  ],
+  "type": "default",
+  "id": "fraud-investigation-form"
+}

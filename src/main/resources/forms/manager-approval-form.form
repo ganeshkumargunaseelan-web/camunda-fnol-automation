@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 16,
+  "exporter": {
+    "name": "GCC Motor FNOL Starter Kit",
+    "version": "1.0.0"
+  },
+  "components": [
+    {
+      "text": "# Manager Approval Required\n\nThis claim settlement exceeds auto-approval limits and requires your authorization.",
+      "type": "text",
+      "id": "Field_Header"
+    },
+    {
+      "label": "FNOL Reference",
+      "type": "textfield",
+      "id": "Field_FnolId",
+      "key": "fnolId",
+      "disabled": true
+    },
+    {
+      "text": "## Settlement Details",
+      "type": "text",
+      "id": "Field_SettlementSection"
+    },
+    {
+      "label": "Settlement Type",
+      "type": "textfield",
+      "id": "Field_SettlementType",
+      "key": "settlementType",
+      "disabled": true
+    },
+    {
+      "label": "Estimated Amount (AED)",
+      "type": "number",
+      "id": "Field_Amount",
+      "key": "estimatedAmount",
+      "disabled": true
+    },
+    {
+      "label": "Auto-Approval Limit (AED)",
+      "type": "number",
+      "id": "Field_Limit",
+      "key": "autoApprovalLimit",
+      "disabled": true
+    },
+    {
+      "label": "Amount Exceeds Limit By (AED)",
+      "type": "number",
+      "id": "Field_Excess",
+      "key": "excessAmount",
+      "disabled": true
+    },
+    {
+      "text": "## Claim Summary",
+      "type": "text",
+      "id": "Field_ClaimSection"
+    },
+    {
+      "label": "Damage Level",
+      "type": "textfield",
+      "id": "Field_DamageLevel",
+      "key": "damageLevel",
+      "disabled": true
+    },
+    {
+      "label": "Coverage Type",
+      "type": "textfield",
+      "id": "Field_Coverage",
+      "key": "coverageType",
+      "disabled": true
+    },
+    {
+      "label": "Injuries Reported",
+      "type": "checkbox",
+      "id": "Field_Injuries",
+      "key": "hasInjuries",
+      "disabled": true
+    },
+    {
+      "label": "Claims Handler Assessment",
+      "type": "textarea",
+      "id": "Field_Assessment",
+      "key": "assessmentNotes",
+      "disabled": true
+    },
+    {
+      "label": "Handler Recommendation",
+      "type": "textfield",
+      "id": "Field_Recommendation",
+      "key": "recommendation",
+      "disabled": true
+    },
+    {
+      "text": "---\n\n## Manager Decision",
+      "type": "text",
+      "id": "Field_DecisionSection"
+    },
+    {
+      "label": "Approved Settlement Amount (AED)",
+      "type": "number",
+      "id": "Field_ApprovedAmount",
+      "key": "approvedAmount",
+      "validate": {
+        "required": true,
+        "min": 0
+      },
+      "description": "Enter the amount you approve (can be different from estimated)"
+    },
+    {
+      "label": "Approval Decision",
+      "type": "select",
+      "id": "Field_ApprovalDecision",
+      "key": "managerApprovalDecision",
+      "validate": {
+        "required": true
+      },
+      "values": [
+        { "label": "Approved - Full amount", "value": "APPROVED_FULL" },
+        { "label": "Approved - Partial amount", "value": "APPROVED_PARTIAL" },
+        { "label": "Approved - With conditions", "value": "APPROVED_CONDITIONS" },
+        { "label": "Rejected - Insufficient justification", "value": "REJECTED_JUSTIFICATION" },
+        { "label": "Rejected - Policy exclusion", "value": "REJECTED_EXCLUSION" },
+        { "label": "Escalate to Director", "value": "ESCALATE" }
+      ]
+    },
+    {
+      "label": "Conditions (if applicable)",
+      "type": "textarea",
+      "id": "Field_Conditions",
+      "key": "approvalConditions",
+      "conditional": {
+        "hide": "=managerApprovalDecision != \"APPROVED_CONDITIONS\""
+      }
+    },
+    {
+      "label": "Manager Notes",
+      "type": "textarea",
+      "id": "Field_ManagerNotes",
+      "key": "managerNotes",
+      "validate": {
+        "required": true,
+        "minLength": 20
+      },
+      "description": "Provide justification for your decision (minimum 20 characters)"
+    },
+    {
+      "label": "I authorize this settlement decision",
+      "type": "checkbox",
+      "id": "Field_Authorize",
+      "key": "managerAuthorized",
+      "validate": {
+        "required": true
+      }
+    }
+  ],
+  "type": "default",
+  "id": "manager-approval-form"
+}

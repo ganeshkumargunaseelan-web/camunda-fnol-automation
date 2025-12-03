@@ -1,0 +1,67 @@
+# GCC MOTOR FNOL STARTER KIT - DEMO MODE CONFIGURATION
+# Usage: java -jar gcc-motor-fnol-starter.jar --spring.profiles.active=demo
+
+spring:
+  autoconfigure:
+    exclude:
+      - io.camunda.zeebe.spring.client.configuration.ZeebeClientAllAutoConfiguration
+      - io.camunda.zeebe.spring.client.configuration.ZeebeClientProdAutoConfiguration
+
+  datasource:
+    url: jdbc:h2:mem:fnol_demo;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+  # ═══ DISABLE FLYWAY (H2 uses JPA auto-create) ═══
+  flyway:
+    enabled: false
+
+  # ═══ ENABLE H2 CONSOLE ═══
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: false
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# FNOL DEMO MODE
+# ─────────────────────────────────────────────────────────────────────────────────
+fnol:
+  demo-mode: true
+  security:
+    api-key:
+      enabled: false
+    rate-limit:
+      enabled: false
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# CAMUNDA - DISABLED IN DEMO MODE (Uses mock)
+# ─────────────────────────────────────────────────────────────────────────────────
+camunda:
+  client:
+    mode: demo
+  process:
+    auto-deploy: false
+
+# Disable actual Zeebe client in demo mode
+zeebe:
+  client:
+    enabled: false
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# LOGGING - MORE VERBOSE FOR DEMO
+# ─────────────────────────────────────────────────────────────────────────────────
+logging:
+  level:
+    io.camunda.community.fnol: DEBUG
+    org.springframework.web: DEBUG

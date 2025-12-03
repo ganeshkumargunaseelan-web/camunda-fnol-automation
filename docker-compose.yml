@@ -1,0 +1,82 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# GCC Motor FNOL Starter Kit - Docker Compose
+# ═══════════════════════════════════════════════════════════════════════════════
+# Usage:
+#   docker-compose up -d              # Start all services
+#   docker-compose up -d fnol         # Start FNOL only (demo mode)
+#   docker-compose logs -f fnol       # View logs
+#   docker-compose down               # Stop all services
+# ═══════════════════════════════════════════════════════════════════════════════
+
+version: '3.8'
+
+services:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # PostgreSQL Database
+  # ─────────────────────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: fnol-postgres
+    environment:
+      POSTGRES_DB: fnol
+      POSTGRES_USER: fnol
+      POSTGRES_PASSWORD: fnol_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fnol"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # FNOL Application
+  # ─────────────────────────────────────────────────────────────────────────────
+  fnol:
+    build: .
+    container_name: fnol-app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: production
+      DATABASE_URL: jdbc:postgresql://postgres:5432/fnol
+      DATABASE_USERNAME: fnol
+      DATABASE_PASSWORD: fnol_secret
+      CAMUNDA_MODE: demo
+      # Uncomment for Camunda Cloud:
+      # CAMUNDA_MODE: cloud
+      # CAMUNDA_CLOUD_CLUSTER_ID: your-cluster-id
+      # CAMUNDA_CLOUD_CLIENT_ID: your-client-id
+      # CAMUNDA_CLOUD_CLIENT_SECRET: your-client-secret
+      # CAMUNDA_CLOUD_REGION: bru-2
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # FNOL Demo Mode (No Database Required)
+  # ─────────────────────────────────────────────────────────────────────────────
+  fnol-demo:
+    build: .
+    container_name: fnol-demo
+    ports:
+      - "8081:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: demo
+    profiles:
+      - demo
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: fnol-network

@@ -1,0 +1,2 @@
+# Disable Spring Zeebe for tests
+org.springframework.boot.env.EnvironmentPostProcessor=

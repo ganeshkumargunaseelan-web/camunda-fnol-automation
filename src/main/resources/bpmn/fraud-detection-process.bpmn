@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  GCC Motor FNOL Starter Kit - Fraud Detection Sub-Process
+  Copyright 2025 G. Ganesh Kumar | Solution Architect
+  Contact: UAE +971-55-816-0396 | WhatsApp +91-95000-03051
+  Apache License 2.0 - https://www.apache.org/licenses/LICENSE-2.0
+
+  Camunda 8 Features: Call Activity, Multi-Instance Parallel, DMN, Service Tasks
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:zeebe="http://camunda.org/schema/zeebe/1.0"
+                  xmlns:modeler="http://camunda.org/schema/modeler/1.0"
+                  id="Definitions_FraudDetection"
+                  targetNamespace="http://camunda.org/gcc-motor-fnol/fraud"
+                  exporter="GCC Motor FNOL Starter Kit"
+                  exporterVersion="1.0.0"
+                  modeler:executionPlatform="Camunda Cloud"
+                  modeler:executionPlatformVersion="8.6.0">
+
+  <bpmn:process id="fraud-detection-process" name="Fraud Detection Process" isExecutable="true">
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- START EVENT                                                              -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <bpmn:startEvent id="Start_FraudCheck" name="Start Fraud Check">
+      <bpmn:outgoing>Flow_ToInitialize</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- INITIALIZE FRAUD CHECK                                                   -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <bpmn:serviceTask id="Task_InitializeFraudCheck" name="Initialize Fraud Check">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="initialize-fraud-check" />
+        <zeebe:taskHeaders>
+          <zeebe:header key="checkTypes" value="velocity,duplicate,blacklist,pattern" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToInitialize</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToParallelChecks</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- PARALLEL FRAUD CHECKS (Multi-Instance Pattern)                           -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <bpmn:parallelGateway id="Gateway_ParallelStart" name="Run Parallel Checks">
+      <bpmn:incoming>Flow_ToParallelChecks</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToVelocityCheck</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToDuplicateCheck</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToBlacklistCheck</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToPatternCheck</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- CHECK 1: VELOCITY CHECK (Too many claims in short period)                -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <bpmn:serviceTask id="Task_VelocityCheck" name="Velocity Check">
+      <bpmn:documentation>
+        Check if the policyholder or vehicle has too many claims in a short period.
+        - More than 3 claims in 30 days = HIGH risk
+        - More than 5 claims in 90 days = HIGH risk
+        - More than 2 claims in 7 days = CRITICAL risk
+      </bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="fraud-velocity-check" retries="3" />
+        <zeebe:taskHeaders>
+          <zeebe:header key="checkWindow30Days" value="3" />
+          <zeebe:header key="checkWindow90Days" value="5" />
+          <zeebe:header key="checkWindow7Days" value="2" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToVelocityCheck</bpmn:incoming>
+      <bpmn:outgoing>Flow_VelocityDone</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- CHECK 2: DUPLICATE CHECK (Same incident reported multiple times)         -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <bpmn:serviceTask id="Task_DuplicateCheck" name="Duplicate Claim Check">
+      <bpmn:documentation>
+        Check for duplicate claims based on:
+        - Same vehicle + same date + similar location
+        - Same policy + same date
+        - Same mobile number + same date + similar description
+      </bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="fraud-duplicate-check" retries="3" />
+        <zeebe:taskHeaders>
+          <zeebe:header key="similarityThreshold" value="0.85" />
+          <zeebe:header key="locationRadiusKm" value="1" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToDuplicateCheck</bpmn:incoming>
+      <bpmn:outgoing>Flow_DuplicateDone</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- CHECK 3: BLACKLIST CHECK (Known fraudsters)                              -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <bpmn:serviceTask id="Task_BlacklistCheck" name="Blacklist Check">
+      <bpmn:documentation>
+        Check against known fraud databases:
+        - National ID blacklist
+        - Mobile number blacklist
+        - Policy number blacklist
+        - Vehicle plate blacklist
+        - Address blacklist
+      </bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="fraud-blacklist-check" retries="3" />
+        <zeebe:taskHeaders>
+          <zeebe:header key="databases" value="national,regional,company" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToBlacklistCheck</bpmn:incoming>
+      <bpmn:outgoing>Flow_BlacklistDone</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- CHECK 4: PATTERN ANALYSIS (ML-based fraud patterns)                      -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <bpmn:serviceTask id="Task_PatternCheck" name="Pattern Analysis">
+      <bpmn:documentation>
+        ML-based pattern analysis for known fraud patterns:
+        - Time of day patterns (late night claims)
+        - Location patterns (known fraud hotspots)
+        - Description patterns (copy-paste descriptions)
+        - Amount patterns (round numbers, threshold gaming)
+      </bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="fraud-pattern-check" retries="3" />
+        <zeebe:taskHeaders>
+          <zeebe:header key="modelVersion" value="v2.1" />
+          <zeebe:header key="confidenceThreshold" value="0.75" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToPatternCheck</bpmn:incoming>
+      <bpmn:outgoing>Flow_PatternDone</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- MERGE PARALLEL CHECKS                                                    -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <bpmn:parallelGateway id="Gateway_ParallelEnd" name="Merge Check Results">
+      <bpmn:incoming>Flow_VelocityDone</bpmn:incoming>
+      <bpmn:incoming>Flow_DuplicateDone</bpmn:incoming>
+      <bpmn:incoming>Flow_BlacklistDone</bpmn:incoming>
+      <bpmn:incoming>Flow_PatternDone</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToScoreCalculation</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- CALCULATE FRAUD SCORE (DMN)                                              -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <bpmn:businessRuleTask id="Task_CalculateFraudScore" name="Calculate Fraud Score">
+      <bpmn:documentation>
+        Calculate overall fraud score based on individual check results.
+        Uses DMN decision table for transparent, auditable scoring.
+      </bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:calledDecision decisionId="fraud-score-calculation" resultVariable="fraudScoreResult" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToScoreCalculation</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToIndicatorCollection</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- COLLECT FRAUD INDICATORS                                                 -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <bpmn:serviceTask id="Task_CollectIndicators" name="Collect Fraud Indicators">
+      <bpmn:documentation>
+        Collect all fraud indicators for audit trail and investigation.
+      </bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="collect-fraud-indicators" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToIndicatorCollection</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToReviewDecision</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- DETERMINE IF MANUAL REVIEW NEEDED (DMN)                                  -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <bpmn:businessRuleTask id="Task_DetermineReview" name="Determine Review Required">
+      <bpmn:extensionElements>
+        <zeebe:calledDecision decisionId="fraud-review-decision" resultVariable="reviewDecision" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToReviewDecision</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToFinalizeOutput</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- FINALIZE OUTPUT VARIABLES                                                -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <bpmn:serviceTask id="Task_FinalizeOutput" name="Finalize Fraud Check Output">
+      <bpmn:documentation>
+        Prepare output variables to return to parent process:
+        - fraudScore (0-100)
+        - fraudIndicators (list of indicators)
+        - requiresManualReview (boolean)
+      </bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="finalize-fraud-output" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToFinalizeOutput</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- END EVENT                                                                -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <bpmn:endEvent id="End_FraudCheck" name="Fraud Check Complete">
+      <bpmn:incoming>Flow_ToEnd</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- SEQUENCE FLOWS                                                           -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <bpmn:sequenceFlow id="Flow_ToInitialize" sourceRef="Start_FraudCheck" targetRef="Task_InitializeFraudCheck" />
+    <bpmn:sequenceFlow id="Flow_ToParallelChecks" sourceRef="Task_InitializeFraudCheck" targetRef="Gateway_ParallelStart" />
+    <bpmn:sequenceFlow id="Flow_ToVelocityCheck" sourceRef="Gateway_ParallelStart" targetRef="Task_VelocityCheck" />
+    <bpmn:sequenceFlow id="Flow_ToDuplicateCheck" sourceRef="Gateway_ParallelStart" targetRef="Task_DuplicateCheck" />
+    <bpmn:sequenceFlow id="Flow_ToBlacklistCheck" sourceRef="Gateway_ParallelStart" targetRef="Task_BlacklistCheck" />
+    <bpmn:sequenceFlow id="Flow_ToPatternCheck" sourceRef="Gateway_ParallelStart" targetRef="Task_PatternCheck" />
+    <bpmn:sequenceFlow id="Flow_VelocityDone" sourceRef="Task_VelocityCheck" targetRef="Gateway_ParallelEnd" />
+    <bpmn:sequenceFlow id="Flow_DuplicateDone" sourceRef="Task_DuplicateCheck" targetRef="Gateway_ParallelEnd" />
+    <bpmn:sequenceFlow id="Flow_BlacklistDone" sourceRef="Task_BlacklistCheck" targetRef="Gateway_ParallelEnd" />
+    <bpmn:sequenceFlow id="Flow_PatternDone" sourceRef="Task_PatternCheck" targetRef="Gateway_ParallelEnd" />
+    <bpmn:sequenceFlow id="Flow_ToScoreCalculation" sourceRef="Gateway_ParallelEnd" targetRef="Task_CalculateFraudScore" />
+    <bpmn:sequenceFlow id="Flow_ToIndicatorCollection" sourceRef="Task_CalculateFraudScore" targetRef="Task_CollectIndicators" />
+    <bpmn:sequenceFlow id="Flow_ToReviewDecision" sourceRef="Task_CollectIndicators" targetRef="Task_DetermineReview" />
+    <bpmn:sequenceFlow id="Flow_ToFinalizeOutput" sourceRef="Task_DetermineReview" targetRef="Task_FinalizeOutput" />
+    <bpmn:sequenceFlow id="Flow_ToEnd" sourceRef="Task_FinalizeOutput" targetRef="End_FraudCheck" />
+
+  </bpmn:process>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- DIAGRAM INFORMATION                                                      -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Fraud">
+    <bpmndi:BPMNPlane id="BPMNPlane_Fraud" bpmnElement="fraud-detection-process">
+      <!-- Start Event -->
+      <bpmndi:BPMNShape id="Start_FraudCheck_di" bpmnElement="Start_FraudCheck">
+        <dc:Bounds x="152" y="232" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="128" y="275" width="85" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <!-- Initialize Fraud Check -->
+      <bpmndi:BPMNShape id="Task_InitializeFraudCheck_di" bpmnElement="Task_InitializeFraudCheck">
+        <dc:Bounds x="240" y="210" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <!-- Parallel Gateway Start -->
+      <bpmndi:BPMNShape id="Gateway_ParallelStart_di" bpmnElement="Gateway_ParallelStart">
+        <dc:Bounds x="395" y="225" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="375" y="282" width="90" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <!-- Velocity Check -->
+      <bpmndi:BPMNShape id="Task_VelocityCheck_di" bpmnElement="Task_VelocityCheck">
+        <dc:Bounds x="500" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <!-- Duplicate Check -->
+      <bpmndi:BPMNShape id="Task_DuplicateCheck_di" bpmnElement="Task_DuplicateCheck">
+        <dc:Bounds x="500" y="180" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <!-- Blacklist Check -->
+      <bpmndi:BPMNShape id="Task_BlacklistCheck_di" bpmnElement="Task_BlacklistCheck">
+        <dc:Bounds x="500" y="280" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <!-- Pattern Check -->
+      <bpmndi:BPMNShape id="Task_PatternCheck_di" bpmnElement="Task_PatternCheck">
+        <dc:Bounds x="500" y="380" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <!-- Parallel Gateway End -->
+      <bpmndi:BPMNShape id="Gateway_ParallelEnd_di" bpmnElement="Gateway_ParallelEnd">
+        <dc:Bounds x="655" y="225" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="635" y="282" width="90" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <!-- Calculate Fraud Score -->
+      <bpmndi:BPMNShape id="Task_CalculateFraudScore_di" bpmnElement="Task_CalculateFraudScore">
+        <dc:Bounds x="760" y="210" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <!-- Collect Indicators -->
+      <bpmndi:BPMNShape id="Task_CollectIndicators_di" bpmnElement="Task_CollectIndicators">
+        <dc:Bounds x="910" y="210" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <!-- Determine Review -->
+      <bpmndi:BPMNShape id="Task_DetermineReview_di" bpmnElement="Task_DetermineReview">
+        <dc:Bounds x="1060" y="210" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <!-- Finalize Output -->
+      <bpmndi:BPMNShape id="Task_FinalizeOutput_di" bpmnElement="Task_FinalizeOutput">
+        <dc:Bounds x="1210" y="210" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <!-- End Event -->
+      <bpmndi:BPMNShape id="End_FraudCheck_di" bpmnElement="End_FraudCheck">
+        <dc:Bounds x="1362" y="232" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1336" y="275" width="88" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <!-- Sequence Flow Edges -->
+      <bpmndi:BPMNEdge id="Flow_ToInitialize_di" bpmnElement="Flow_ToInitialize">
+        <di:waypoint x="188" y="250" />
+        <di:waypoint x="240" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToParallelChecks_di" bpmnElement="Flow_ToParallelChecks">
+        <di:waypoint x="340" y="250" />
+        <di:waypoint x="395" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToVelocityCheck_di" bpmnElement="Flow_ToVelocityCheck">
+        <di:waypoint x="420" y="225" />
+        <di:waypoint x="420" y="120" />
+        <di:waypoint x="500" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToDuplicateCheck_di" bpmnElement="Flow_ToDuplicateCheck">
+        <di:waypoint x="420" y="245" />
+        <di:waypoint x="420" y="220" />
+        <di:waypoint x="500" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToBlacklistCheck_di" bpmnElement="Flow_ToBlacklistCheck">
+        <di:waypoint x="420" y="255" />
+        <di:waypoint x="420" y="320" />
+        <di:waypoint x="500" y="320" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToPatternCheck_di" bpmnElement="Flow_ToPatternCheck">
+        <di:waypoint x="420" y="275" />
+        <di:waypoint x="420" y="420" />
+        <di:waypoint x="500" y="420" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_VelocityDone_di" bpmnElement="Flow_VelocityDone">
+        <di:waypoint x="600" y="120" />
+        <di:waypoint x="680" y="120" />
+        <di:waypoint x="680" y="225" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_DuplicateDone_di" bpmnElement="Flow_DuplicateDone">
+        <di:waypoint x="600" y="220" />
+        <di:waypoint x="680" y="220" />
+        <di:waypoint x="680" y="245" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_BlacklistDone_di" bpmnElement="Flow_BlacklistDone">
+        <di:waypoint x="600" y="320" />
+        <di:waypoint x="680" y="320" />
+        <di:waypoint x="680" y="275" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_PatternDone_di" bpmnElement="Flow_PatternDone">
+        <di:waypoint x="600" y="420" />
+        <di:waypoint x="680" y="420" />
+        <di:waypoint x="680" y="275" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToScoreCalculation_di" bpmnElement="Flow_ToScoreCalculation">
+        <di:waypoint x="705" y="250" />
+        <di:waypoint x="760" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToIndicatorCollection_di" bpmnElement="Flow_ToIndicatorCollection">
+        <di:waypoint x="860" y="250" />
+        <di:waypoint x="910" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToReviewDecision_di" bpmnElement="Flow_ToReviewDecision">
+        <di:waypoint x="1010" y="250" />
+        <di:waypoint x="1060" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToFinalizeOutput_di" bpmnElement="Flow_ToFinalizeOutput">
+        <di:waypoint x="1160" y="250" />
+        <di:waypoint x="1210" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToEnd_di" bpmnElement="Flow_ToEnd">
+        <di:waypoint x="1310" y="250" />
+        <di:waypoint x="1362" y="250" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</bpmn:definitions>

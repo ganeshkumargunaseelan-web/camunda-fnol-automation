@@ -1,0 +1,118 @@
+{
+  "app": {
+    "title": "जीसीसी मोटर एफएनओएल",
+    "subtitle": "हानि की प्रथम सूचना",
+    "loading": "लोड हो रहा है...",
+    "error": "एक त्रुटि हुई"
+  },
+  "nav": {
+    "home": "होम",
+    "newClaim": "दुर्घटना रिपोर्ट करें",
+    "trackClaim": "दावा ट्रैक करें"
+  },
+  "form": {
+    "steps": {
+      "contact": "संपर्क जानकारी",
+      "vehicle": "वाहन विवरण",
+      "incident": "घटना विवरण",
+      "attachments": "अटैचमेंट",
+      "review": "समीक्षा और सबमिट"
+    },
+    "contact": {
+      "title": "संपर्क जानकारी",
+      "country": "देश",
+      "mobileNumber": "मोबाइल नंबर",
+      "nationalId": "राष्ट्रीय आईडी",
+      "name": "पूरा नाम",
+      "email": "ईमेल पता"
+    },
+    "vehicle": {
+      "title": "वाहन जानकारी",
+      "plateNumber": "प्लेट नंबर",
+      "plateCountry": "प्लेट देश",
+      "vehicleType": "वाहन प्रकार",
+      "make": "निर्माता",
+      "model": "मॉडल",
+      "year": "वर्ष",
+      "color": "रंग",
+      "policyNumber": "पॉलिसी नंबर",
+      "coverageType": "कवरेज प्रकार",
+      "isFleet": "फ्लीट वाहन"
+    },
+    "incident": {
+      "title": "घटना विवरण",
+      "date": "घटना तिथि",
+      "time": "घटना समय",
+      "location": "स्थान",
+      "description": "विवरण",
+      "isDrivable": "वाहन चलाने योग्य है",
+      "hasInjuries": "चोटें रिपोर्ट की गईं",
+      "thirdParty": "तीसरा पक्ष शामिल",
+      "policeReport": "पुलिस रिपोर्ट नंबर"
+    },
+    "attachments": {
+      "title": "अटैचमेंट",
+      "addPhoto": "फोटो जोड़ें",
+      "addVideo": "वीडियो जोड़ें",
+      "addDocument": "दस्तावेज़ जोड़ें",
+      "noAttachments": "कोई अटैचमेंट नहीं जोड़ा गया"
+    },
+    "review": {
+      "title": "अपना सबमिशन समीक्षा करें",
+      "submit": "एफएनओएल सबमिट करें"
+    },
+    "buttons": {
+      "next": "अगला",
+      "back": "पीछे",
+      "submit": "सबमिट करें",
+      "cancel": "रद्द करें"
+    },
+    "validation": {
+      "required": "यह फ़ील्ड आवश्यक है",
+      "invalidEmail": "अमान्य ईमेल पता",
+      "invalidPhone": "अमान्य फोन नंबर",
+      "invalidDate": "अमान्य तिथि"
+    }
+  },
+  "success": {
+    "title": "एफएनओएल सफलतापूर्वक सबमिट किया गया",
+    "fnolId": "आपका एफएनओएल संदर्भ नंबर",
+    "message": "आपका दावा सबमिट कर दिया गया है और प्रसंस्करण किया जा रहा है।",
+    "trackLink": "अपने दावे की स्थिति ट्रैक करें"
+  },
+  "tracking": {
+    "title": "अपना दावा ट्रैक करें",
+    "enterFnolId": "अपना एफएनओएल आईडी दर्ज करें",
+    "search": "खोजें",
+    "status": "स्थिति",
+    "severity": "गंभीरता",
+    "route": "प्रसंस्करण मार्ग",
+    "submitted": "सबमिट किया गया",
+    "lastUpdated": "अंतिम अपडेट"
+  },
+  "countries": {
+    "UAE": "संयुक्त अरब अमीरात",
+    "SAU": "सऊदी अरब",
+    "KWT": "कुवैत",
+    "QAT": "कतर",
+    "BHR": "बहरीन",
+    "OMN": "ओमान"
+  },
+  "vehicleTypes": {
+    "SEDAN": "सेडान",
+    "SUV": "एसयूवी",
+    "PICKUP": "पिकअप",
+    "VAN": "वैन",
+    "TRUCK": "ट्रक",
+    "MOTORCYCLE": "मोटरसाइकिल",
+    "BUS": "बस",
+    "OTHER": "अन्य"
+  },
+  "coverageTypes": {
+    "COMPREHENSIVE": "व्यापक",
+    "TPL": "तीसरे पक्ष की देयता"
+  },
+  "language": {
+    "select": "भाषा चुनें"
+  }
+}

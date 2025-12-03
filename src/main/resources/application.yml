@@ -1,0 +1,251 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# GCC MOTOR FNOL STARTER KIT - MAIN CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# SERVER CONFIGURATION
+# ─────────────────────────────────────────────────────────────────────────────────
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: ${CONTEXT_PATH:/}
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain,application/javascript,text/css
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# SPRING CONFIGURATION
+# ─────────────────────────────────────────────────────────────────────────────────
+spring:
+  application:
+    name: gcc-motor-fnol
+
+  # ═══ DATABASE ═══
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/fnol}
+    username: ${DATABASE_USERNAME:fnol}
+    password: ${DATABASE_PASSWORD:fnol}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      minimum-idle: ${DB_MIN_IDLE:2}
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # ═══ JPA ═══
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: ${SHOW_SQL:false}
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+
+  # ═══ FLYWAY ═══
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
+
+  # ═══ JACKSON ═══
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+      indent-output: false
+    deserialization:
+      fail-on-unknown-properties: false
+    default-property-inclusion: non_null
+    time-zone: UTC
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# CAMUNDA 8 CONFIGURATION
+# ─────────────────────────────────────────────────────────────────────────────────
+camunda:
+  client:
+    mode: ${CAMUNDA_MODE:self-managed}
+    # ═══ SAAS ═══
+    cloud:
+      region: ${CAMUNDA_CLOUD_REGION:}
+      cluster-id: ${CAMUNDA_CLOUD_CLUSTER_ID:}
+      client-id: ${CAMUNDA_CLOUD_CLIENT_ID:}
+      client-secret: ${CAMUNDA_CLOUD_CLIENT_SECRET:}
+    # ═══ SELF-MANAGED ═══
+    zeebe:
+      gateway-address: ${ZEEBE_GATEWAY_ADDRESS:localhost:26500}
+      security:
+        plaintext: ${ZEEBE_SECURITY_PLAINTEXT:true}
+  process:
+    id: ${CAMUNDA_PROCESS_ID:MOTOR_FNOL_PROCESS}
+    auto-deploy: ${CAMUNDA_AUTO_DEPLOY:false}
+
+# Zeebe client configuration (for spring-zeebe-starter)
+zeebe:
+  client:
+    broker:
+      gateway-address: ${ZEEBE_GATEWAY_ADDRESS:localhost:26500}
+    security:
+      plaintext: ${ZEEBE_SECURITY_PLAINTEXT:true}
+    cloud:
+      region: ${CAMUNDA_CLOUD_REGION:}
+      cluster-id: ${CAMUNDA_CLOUD_CLUSTER_ID:}
+      client-id: ${CAMUNDA_CLOUD_CLIENT_ID:}
+      client-secret: ${CAMUNDA_CLOUD_CLIENT_SECRET:}
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# FNOL APPLICATION CONFIGURATION
+# ─────────────────────────────────────────────────────────────────────────────────
+fnol:
+  # ═══ DEMO MODE ═══
+  demo-mode: ${FNOL_DEMO_MODE:false}
+
+  # ═══ BRANDING ═══
+  branding:
+    app-name: ${FNOL_APP_NAME:GCC Motor FNOL}
+    logo-url: ${FNOL_LOGO_URL:/assets/logo.png}
+    favicon-url: ${FNOL_FAVICON_URL:/favicon.ico}
+    primary-color: ${FNOL_PRIMARY_COLOR:#1976d2}
+    secondary-color: ${FNOL_SECONDARY_COLOR:#dc004e}
+
+  # ═══ SECURITY ═══
+  security:
+    api-key:
+      enabled: ${FNOL_API_KEY_ENABLED:false}
+      header-name: ${FNOL_API_KEY_HEADER:X-API-Key}
+      key: ${FNOL_API_KEY:}
+    rate-limit:
+      enabled: ${FNOL_RATE_LIMIT_ENABLED:true}
+      requests-per-minute: ${FNOL_RATE_LIMIT_RPM:30}
+    cors:
+      allowed-origins: ${FNOL_CORS_ORIGINS:*}
+      allowed-methods: GET,POST,OPTIONS
+
+  # ═══ WEBHOOK ═══
+  webhook:
+    enabled: ${FNOL_WEBHOOK_ENABLED:false}
+    url: ${FNOL_WEBHOOK_URL:}
+    secret: ${FNOL_WEBHOOK_SECRET:}
+    timeout-ms: ${FNOL_WEBHOOK_TIMEOUT:5000}
+    retry-count: ${FNOL_WEBHOOK_RETRY:3}
+
+  # ═══ ID GENERATION ═══
+  id-generation:
+    prefix: ${FNOL_ID_PREFIX:FNOL}
+    sequence-padding: ${FNOL_ID_PADDING:6}
+
+  # ═══ ATTACHMENTS ═══
+  attachments:
+    max-count: ${FNOL_MAX_ATTACHMENTS:10}
+    max-url-length: ${FNOL_MAX_URL_LENGTH:2048}
+    allowed-types: image,video,document,audio
+
+  # ═══ VALIDATION ═══
+  validation:
+    strict-mode: ${FNOL_VALIDATION_STRICT:false}
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# GCC COUNTRY CONFIGURATION
+# ─────────────────────────────────────────────────────────────────────────────────
+gcc:
+  countries:
+    AE:
+      name: United Arab Emirates
+      timezone: Asia/Dubai
+      msisdn-prefix: "+971"
+      msisdn-length: 13
+      national-id-pattern: "^784-?\\d{4}-?\\d{7}-?\\d$"
+      national-id-name: Emirates ID
+      plate-pattern: "^[A-Z]{1,3}\\s?\\d{1,5}$"
+    SA:
+      name: Saudi Arabia
+      timezone: Asia/Riyadh
+      msisdn-prefix: "+966"
+      msisdn-length: 13
+      national-id-pattern: "^[12]\\d{9}$"
+      national-id-name: National ID / Iqama
+      plate-pattern: "^[A-Z]{3}\\s?\\d{4}$"
+    QA:
+      name: Qatar
+      timezone: Asia/Qatar
+      msisdn-prefix: "+974"
+      msisdn-length: 12
+      national-id-pattern: "^\\d{11}$"
+      national-id-name: QID
+      plate-pattern: "^\\d{1,6}$"
+    BH:
+      name: Bahrain
+      timezone: Asia/Bahrain
+      msisdn-prefix: "+973"
+      msisdn-length: 12
+      national-id-pattern: "^\\d{9}$"
+      national-id-name: CPR
+      plate-pattern: "^\\d{1,6}$"
+    KW:
+      name: Kuwait
+      timezone: Asia/Kuwait
+      msisdn-prefix: "+965"
+      msisdn-length: 12
+      national-id-pattern: "^\\d{12}$"
+      national-id-name: Civil ID
+      plate-pattern: "^\\d{1,6}\\s?[\\u0600-\\u06FF]{1,3}$"
+    OM:
+      name: Oman
+      timezone: Asia/Muscat
+      msisdn-prefix: "+968"
+      msisdn-length: 12
+      national-id-pattern: "^\\d{8,9}$"
+      national-id-name: Resident Card
+      plate-pattern: "^\\d{1,6}\\s?[A-Z]{1,2}$"
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# OBSERVABILITY
+# ─────────────────────────────────────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: ${HEALTH_SHOW_DETAILS:when_authorized}
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: gcc-motor-fnol
+  info:
+    env:
+      enabled: true
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# LOGGING
+# ─────────────────────────────────────────────────────────────────────────────────
+logging:
+  level:
+    root: ${LOG_LEVEL_ROOT:INFO}
+    io.camunda.community.fnol: ${LOG_LEVEL_APP:INFO}
+    io.camunda.zeebe: ${LOG_LEVEL_ZEEBE:WARN}
+    org.springframework.web: INFO
+    org.hibernate.SQL: ${LOG_LEVEL_SQL:WARN}
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) [%thread] %cyan(%logger{36}) - %msg%n"
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# SPRINGDOC OPENAPI
+# ─────────────────────────────────────────────────────────────────────────────────
+springdoc:
+  api-docs:
+    path: /api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+  show-actuator: false

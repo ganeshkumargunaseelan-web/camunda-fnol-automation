@@ -1,0 +1,48 @@
+{
+  "name": "gcc-motor-fnol-ui",
+  "version": "1.0.0",
+  "description": "GCC Motor FNOL Starter Kit - Frontend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "npx tsc && npx vite build",
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.11.3",
+    "@emotion/styled": "^11.11.0",
+    "@hookform/resolvers": "^3.3.4",
+    "@mui/icons-material": "^5.15.10",
+    "@mui/material": "^5.15.10",
+    "@mui/x-date-pickers": "^6.19.4",
+    "axios": "^1.6.7",
+    "date-fns": "^2.30.0",
+    "i18next": "^23.8.2",
+    "i18next-browser-languagedetector": "^7.2.0",
+    "i18next-http-backend": "^2.4.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.50.1",
+    "react-i18next": "^14.0.5",
+    "react-router-dom": "^6.22.1",
+    "uuid": "^9.0.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/uuid": "^9.0.8",
+    "@types/react": "^18.2.55",
+    "@types/react-dom": "^18.2.19",
+    "@typescript-eslint/eslint-plugin": "^7.0.1",
+    "@typescript-eslint/parser": "^7.0.1",
+    "@vitejs/plugin-react": "^4.2.1",
+    "eslint": "^8.56.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "typescript": "^5.3.3",
+    "vite": "^5.1.3",
+    "vitest": "^1.3.0"
+  }
+}

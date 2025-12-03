@@ -1,0 +1,118 @@
+{
+  "app": {
+    "title": "GCC Motor FNOL",
+    "subtitle": "Unang Abiso ng Pagkawala",
+    "loading": "Naglo-load...",
+    "error": "May naganap na error"
+  },
+  "nav": {
+    "home": "Home",
+    "newClaim": "Mag-ulat ng Aksidente",
+    "trackClaim": "I-track ang Claim"
+  },
+  "form": {
+    "steps": {
+      "contact": "Impormasyon sa Pakikipag-ugnayan",
+      "vehicle": "Detalye ng Sasakyan",
+      "incident": "Detalye ng Insidente",
+      "attachments": "Mga Attachment",
+      "review": "Suriin at Isumite"
+    },
+    "contact": {
+      "title": "Impormasyon sa Pakikipag-ugnayan",
+      "country": "Bansa",
+      "mobileNumber": "Mobile Number",
+      "nationalId": "National ID",
+      "name": "Buong Pangalan",
+      "email": "Email Address"
+    },
+    "vehicle": {
+      "title": "Impormasyon ng Sasakyan",
+      "plateNumber": "Plate Number",
+      "plateCountry": "Bansa ng Plaka",
+      "vehicleType": "Uri ng Sasakyan",
+      "make": "Manufacturer",
+      "model": "Model",
+      "year": "Taon",
+      "color": "Kulay",
+      "policyNumber": "Policy Number",
+      "coverageType": "Uri ng Coverage",
+      "isFleet": "Fleet Vehicle"
+    },
+    "incident": {
+      "title": "Detalye ng Insidente",
+      "date": "Petsa ng Insidente",
+      "time": "Oras ng Insidente",
+      "location": "Lokasyon",
+      "description": "Paglalarawan",
+      "isDrivable": "Kaya pa bang patakbuhin ang sasakyan",
+      "hasInjuries": "May naiulat na pinsala",
+      "thirdParty": "May kasangkot na ikatlong partido",
+      "policeReport": "Police Report Number"
+    },
+    "attachments": {
+      "title": "Mga Attachment",
+      "addPhoto": "Magdagdag ng Larawan",
+      "addVideo": "Magdagdag ng Video",
+      "addDocument": "Magdagdag ng Dokumento",
+      "noAttachments": "Walang idinagdag na attachment"
+    },
+    "review": {
+      "title": "Suriin ang Iyong Pagsusumite",
+      "submit": "Isumite ang FNOL"
+    },
+    "buttons": {
+      "next": "Susunod",
+      "back": "Bumalik",
+      "submit": "Isumite",
+      "cancel": "Kanselahin"
+    },
+    "validation": {
+      "required": "Kinakailangan ang field na ito",
+      "invalidEmail": "Hindi valid na email address",
+      "invalidPhone": "Hindi valid na phone number",
+      "invalidDate": "Hindi valid na petsa"
+    }
+  },
+  "success": {
+    "title": "Matagumpay na Naisumite ang FNOL",
+    "fnolId": "Ang Iyong FNOL Reference Number",
+    "message": "Naisumite na ang iyong claim at pinoproseso na.",
+    "trackLink": "I-track ang status ng iyong claim"
+  },
+  "tracking": {
+    "title": "I-track ang Iyong Claim",
+    "enterFnolId": "Ilagay ang iyong FNOL ID",
+    "search": "Hanapin",
+    "status": "Status",
+    "severity": "Kalubhaan",
+    "route": "Processing Route",
+    "submitted": "Isinumite",
+    "lastUpdated": "Huling Na-update"
+  },
+  "countries": {
+    "UAE": "United Arab Emirates",
+    "SAU": "Saudi Arabia",
+    "KWT": "Kuwait",
+    "QAT": "Qatar",
+    "BHR": "Bahrain",
+    "OMN": "Oman"
+  },
+  "vehicleTypes": {
+    "SEDAN": "Sedan",
+    "SUV": "SUV",
+    "PICKUP": "Pickup",
+    "VAN": "Van",
+    "TRUCK": "Truck",
+    "MOTORCYCLE": "Motorsiklo",
+    "BUS": "Bus",
+    "OTHER": "Iba pa"
+  },
+  "coverageTypes": {
+    "COMPREHENSIVE": "Comprehensive",
+    "TPL": "Third Party Liability"
+  },
+  "language": {
+    "select": "Pumili ng Wika"
+  }
+}

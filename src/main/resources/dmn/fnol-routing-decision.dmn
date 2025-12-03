@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+             xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/"
+             xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
+             xmlns:modeler="http://camunda.org/schema/modeler/1.0"
+             id="fnol-routing-definitions"
+             name="FNOL Routing Decisions"
+             namespace="http://camunda.org/schema/1.0/dmn"
+             exporter="GCC Motor FNOL Starter Kit"
+             exporterVersion="1.0.0"
+             modeler:executionPlatform="Camunda Cloud"
+             modeler:executionPlatformVersion="8.4.0">
+
+  <decision id="fnol-routing-decision" name="FNOL Routing Decision">
+    <decisionTable id="DecisionTable_FnolRouting" hitPolicy="FIRST">
+
+      <!-- Input Columns -->
+      <input id="Input_Injuries" label="Injuries Reported">
+        <inputExpression id="InputExpression_Injuries" typeRef="boolean">
+          <text>injuries</text>
+        </inputExpression>
+      </input>
+
+      <input id="Input_Drivable" label="Vehicle Drivable">
+        <inputExpression id="InputExpression_Drivable" typeRef="boolean">
+          <text>drivable</text>
+        </inputExpression>
+      </input>
+
+      <input id="Input_CoverageType" label="Coverage Type">
+        <inputExpression id="InputExpression_CoverageType" typeRef="string">
+          <text>coverageType</text>
+        </inputExpression>
+      </input>
+
+      <input id="Input_IsFleet" label="Fleet Vehicle">
+        <inputExpression id="InputExpression_IsFleet" typeRef="boolean">
+          <text>isFleet</text>
+        </inputExpression>
+      </input>
+
+      <!-- Output Columns -->
+      <output id="Output_Route" label="Route" name="route" typeRef="string" />
+      <output id="Output_Severity" label="Severity" name="severityLevel" typeRef="string" />
+      <output id="Output_Priority" label="Priority" name="priority" typeRef="number" />
+
+      <!-- Rule 1: Injuries → Complex (Highest Priority) -->
+      <rule id="Rule_1">
+        <description>Any injuries reported - requires senior review</description>
+        <inputEntry id="Input_1_1"><text>true</text></inputEntry>
+        <inputEntry id="Input_1_2"><text>-</text></inputEntry>
+        <inputEntry id="Input_1_3"><text>-</text></inputEntry>
+        <inputEntry id="Input_1_4"><text>-</text></inputEntry>
+        <outputEntry id="Output_1_1"><text>"complex"</text></outputEntry>
+        <outputEntry id="Output_1_2"><text>"HIGH"</text></outputEntry>
+        <outputEntry id="Output_1_3"><text>1</text></outputEntry>
+      </rule>
+
+      <!-- Rule 2: Not Drivable → Standard -->
+      <rule id="Rule_2">
+        <description>Vehicle not drivable - needs towing arrangement</description>
+        <inputEntry id="Input_2_1"><text>false</text></inputEntry>
+        <inputEntry id="Input_2_2"><text>false</text></inputEntry>
+        <inputEntry id="Input_2_3"><text>-</text></inputEntry>
+        <inputEntry id="Input_2_4"><text>-</text></inputEntry>
+        <outputEntry id="Output_2_1"><text>"standard"</text></outputEntry>
+        <outputEntry id="Output_2_2"><text>"MEDIUM"</text></outputEntry>
+        <outputEntry id="Output_2_3"><text>2</text></outputEntry>
+      </rule>
+
+      <!-- Rule 3: Fleet + Comprehensive + Drivable → Fast-Track -->
+      <rule id="Rule_3">
+        <description>Fleet comprehensive - streamlined processing</description>
+        <inputEntry id="Input_3_1"><text>false</text></inputEntry>
+        <inputEntry id="Input_3_2"><text>true</text></inputEntry>
+        <inputEntry id="Input_3_3"><text>"COMPREHENSIVE"</text></inputEntry>
+        <inputEntry id="Input_3_4"><text>true</text></inputEntry>
+        <outputEntry id="Output_3_1"><text>"fast-track"</text></outputEntry>
+        <outputEntry id="Output_3_2"><text>"LOW"</text></outputEntry>
+        <outputEntry id="Output_3_3"><text>3</text></outputEntry>
+      </rule>
+
+      <!-- Rule 4: TPL + Drivable → Fast-Track -->
+      <rule id="Rule_4">
+        <description>Third party liability only - fast processing</description>
+        <inputEntry id="Input_4_1"><text>false</text></inputEntry>
+        <inputEntry id="Input_4_2"><text>true</text></inputEntry>
+        <inputEntry id="Input_4_3"><text>"TPL"</text></inputEntry>
+        <inputEntry id="Input_4_4"><text>-</text></inputEntry>
+        <outputEntry id="Output_4_1"><text>"fast-track"</text></outputEntry>
+        <outputEntry id="Output_4_2"><text>"LOW"</text></outputEntry>
+        <outputEntry id="Output_4_3"><text>3</text></outputEntry>
+      </rule>
+
+      <!-- Rule 5: Comprehensive (non-fleet) + Drivable → Standard -->
+      <rule id="Rule_5">
+        <description>Non-fleet comprehensive - standard review</description>
+        <inputEntry id="Input_5_1"><text>false</text></inputEntry>
+        <inputEntry id="Input_5_2"><text>true</text></inputEntry>
+        <inputEntry id="Input_5_3"><text>"COMPREHENSIVE"</text></inputEntry>
+        <inputEntry id="Input_5_4"><text>false</text></inputEntry>
+        <outputEntry id="Output_5_1"><text>"standard"</text></outputEntry>
+        <outputEntry id="Output_5_2"><text>"MEDIUM"</text></outputEntry>
+        <outputEntry id="Output_5_3"><text>2</text></outputEntry>
+      </rule>
+
+      <!-- Rule 6: Default → Standard -->
+      <rule id="Rule_6">
+        <description>Default routing for any other case</description>
+        <inputEntry id="Input_6_1"><text>-</text></inputEntry>
+        <inputEntry id="Input_6_2"><text>-</text></inputEntry>
+        <inputEntry id="Input_6_3"><text>-</text></inputEntry>
+        <inputEntry id="Input_6_4"><text>-</text></inputEntry>
+        <outputEntry id="Output_6_1"><text>"standard"</text></outputEntry>
+        <outputEntry id="Output_6_2"><text>"MEDIUM"</text></outputEntry>
+        <outputEntry id="Output_6_3"><text>2</text></outputEntry>
+      </rule>
+
+    </decisionTable>
+  </decision>
+
+</definitions>

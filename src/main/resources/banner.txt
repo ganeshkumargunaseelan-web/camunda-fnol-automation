@@ -1,0 +1,13 @@
+
+   ____  ____ ____   __  __       _              _____ _   _  ___  _
+  / ___|/ ___/ ___|  |  \/  | ___ | |_ ___  _ __|  ___| \ | |/ _ \| |
+ | |  _| |  | |      | |\/| |/ _ \| __/ _ \| '__| |_  |  \| | | | | |
+ | |_| | |__| |___   | |  | | (_) | || (_) | |  |  _| | |\  | |_| | |___
+  \____|\____\____|  |_|  |_|\___/ \__\___/|_|  |_|   |_| \_|\___/|_____|
+
+  ${AnsiColor.CYAN}GCC Motor FNOL Starter Kit${AnsiColor.DEFAULT}  v${application.version:1.0.0}
+  ${AnsiColor.GREEN}Powered by Camunda 8${AnsiColor.DEFAULT}
+
+  ${AnsiColor.YELLOW}Demo Mode:${AnsiColor.DEFAULT}      ${fnol.demo-mode:false}
+  ${AnsiColor.YELLOW}Profile:${AnsiColor.DEFAULT}        ${spring.profiles.active:default}
+

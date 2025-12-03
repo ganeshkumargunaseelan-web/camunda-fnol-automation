@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  GCC Motor FNOL Starter Kit - SLA Duration Decision
+  Copyright 2025 G. Ganesh Kumar
+  Licensed under the Apache License, Version 2.0
+
+  This DMN determines the SLA duration based on claim severity.
+  SLA durations are used for timer boundary events in BPMN.
+-->
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+             xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/"
+             xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
+             xmlns:modeler="http://camunda.org/schema/modeler/1.0"
+             id="sla-duration-definitions"
+             name="SLA Duration Decision"
+             namespace="http://camunda.org/gcc-motor-fnol/dmn"
+             exporter="GCC Motor FNOL Starter Kit"
+             exporterVersion="1.0.0"
+             modeler:executionPlatform="Camunda Cloud"
+             modeler:executionPlatformVersion="8.6.0">
+
+  <decision id="sla-duration-decision" name="SLA Duration Decision">
+    <informationRequirement id="InformationRequirement_Severity">
+      <requiredInput href="#Input_SeverityLevel" />
+    </informationRequirement>
+    <informationRequirement id="InformationRequirement_Country">
+      <requiredInput href="#Input_Country" />
+    </informationRequirement>
+
+    <decisionTable id="DecisionTable_SlaDuration" hitPolicy="FIRST">
+
+      <!-- Input Columns -->
+      <input id="Input_Severity" label="Severity Level">
+        <inputExpression id="InputExpression_Severity" typeRef="string">
+          <text>severityLevel</text>
+        </inputExpression>
+        <inputValues id="InputValues_Severity">
+          <text>"HIGH","MEDIUM","LOW"</text>
+        </inputValues>
+      </input>
+
+      <input id="Input_CountryCode" label="Country">
+        <inputExpression id="InputExpression_Country" typeRef="string">
+          <text>country</text>
+        </inputExpression>
+        <inputValues id="InputValues_Country">
+          <text>"AE","SA","KW","QA","BH","OM"</text>
+        </inputValues>
+      </input>
+
+      <input id="Input_IsVIP" label="VIP Customer">
+        <inputExpression id="InputExpression_VIP" typeRef="boolean">
+          <text>isVipCustomer</text>
+        </inputExpression>
+      </input>
+
+      <!-- Output Columns -->
+      <output id="Output_Duration" label="SLA Duration" name="slaDuration" typeRef="string" />
+      <output id="Output_EscalationLevel" label="Escalation Level" name="escalationLevel" typeRef="string" />
+      <output id="Output_Priority" label="Priority Score" name="priorityScore" typeRef="number" />
+
+      <!-- Rule 1: HIGH severity VIP → 2 hours -->
+      <rule id="Rule_HighVIP">
+        <description>VIP customers with HIGH severity get fastest response</description>
+        <inputEntry id="Input_1_1"><text>"HIGH"</text></inputEntry>
+        <inputEntry id="Input_1_2"><text>-</text></inputEntry>
+        <inputEntry id="Input_1_3"><text>true</text></inputEntry>
+        <outputEntry id="Output_1_1"><text>"PT2H"</text></outputEntry>
+        <outputEntry id="Output_1_2"><text>"EXECUTIVE"</text></outputEntry>
+        <outputEntry id="Output_1_3"><text>100</text></outputEntry>
+      </rule>
+
+      <!-- Rule 2: HIGH severity → 4 hours -->
+      <rule id="Rule_High">
+        <description>HIGH severity (injuries) - 4 hour SLA</description>
+        <inputEntry id="Input_2_1"><text>"HIGH"</text></inputEntry>
+        <inputEntry id="Input_2_2"><text>-</text></inputEntry>
+        <inputEntry id="Input_2_3"><text>-</text></inputEntry>
+        <outputEntry id="Output_2_1"><text>"PT4H"</text></outputEntry>
+        <outputEntry id="Output_2_2"><text>"SENIOR_MANAGER"</text></outputEntry>
+        <outputEntry id="Output_2_3"><text>90</text></outputEntry>
+      </rule>
+
+      <!-- Rule 3: MEDIUM severity UAE → 12 hours (UAE has stricter SLAs) -->
+      <rule id="Rule_MediumUAE">
+        <description>MEDIUM severity in UAE - stricter 12 hour SLA</description>
+        <inputEntry id="Input_3_1"><text>"MEDIUM"</text></inputEntry>
+        <inputEntry id="Input_3_2"><text>"AE"</text></inputEntry>
+        <inputEntry id="Input_3_3"><text>-</text></inputEntry>
+        <outputEntry id="Output_3_1"><text>"PT12H"</text></outputEntry>
+        <outputEntry id="Output_3_2"><text>"MANAGER"</text></outputEntry>
+        <outputEntry id="Output_3_3"><text>70</text></outputEntry>
+      </rule>
+
+      <!-- Rule 4: MEDIUM severity → 24 hours -->
+      <rule id="Rule_Medium">
+        <description>MEDIUM severity - 24 hour SLA</description>
+        <inputEntry id="Input_4_1"><text>"MEDIUM"</text></inputEntry>
+        <inputEntry id="Input_4_2"><text>-</text></inputEntry>
+        <inputEntry id="Input_4_3"><text>-</text></inputEntry>
+        <outputEntry id="Output_4_1"><text>"PT24H"</text></outputEntry>
+        <outputEntry id="Output_4_2"><text>"SUPERVISOR"</text></outputEntry>
+        <outputEntry id="Output_4_3"><text>50</text></outputEntry>
+      </rule>
+
+      <!-- Rule 5: LOW severity VIP → 24 hours -->
+      <rule id="Rule_LowVIP">
+        <description>VIP customers with LOW severity get faster response</description>
+        <inputEntry id="Input_5_1"><text>"LOW"</text></inputEntry>
+        <inputEntry id="Input_5_2"><text>-</text></inputEntry>
+        <inputEntry id="Input_5_3"><text>true</text></inputEntry>
+        <outputEntry id="Output_5_1"><text>"PT24H"</text></outputEntry>
+        <outputEntry id="Output_5_2"><text>"TEAM_LEAD"</text></outputEntry>
+        <outputEntry id="Output_5_3"><text>40</text></outputEntry>
+      </rule>
+
+      <!-- Rule 6: LOW severity → 48 hours -->
+      <rule id="Rule_Low">
+        <description>LOW severity - 48 hour SLA</description>
+        <inputEntry id="Input_6_1"><text>"LOW"</text></inputEntry>
+        <inputEntry id="Input_6_2"><text>-</text></inputEntry>
+        <inputEntry id="Input_6_3"><text>-</text></inputEntry>
+        <outputEntry id="Output_6_1"><text>"PT48H"</text></outputEntry>
+        <outputEntry id="Output_6_2"><text>"TEAM_LEAD"</text></outputEntry>
+        <outputEntry id="Output_6_3"><text>30</text></outputEntry>
+      </rule>
+
+      <!-- Rule 7: Default → 24 hours -->
+      <rule id="Rule_Default">
+        <description>Default SLA for any unmatched case</description>
+        <inputEntry id="Input_7_1"><text>-</text></inputEntry>
+        <inputEntry id="Input_7_2"><text>-</text></inputEntry>
+        <inputEntry id="Input_7_3"><text>-</text></inputEntry>
+        <outputEntry id="Output_7_1"><text>"PT24H"</text></outputEntry>
+        <outputEntry id="Output_7_2"><text>"SUPERVISOR"</text></outputEntry>
+        <outputEntry id="Output_7_3"><text>50</text></outputEntry>
+      </rule>
+
+    </decisionTable>
+  </decision>
+
+  <!-- Input Data Definitions -->
+  <inputData id="Input_SeverityLevel" name="Severity Level" />
+  <inputData id="Input_Country" name="Country" />
+
+</definitions>

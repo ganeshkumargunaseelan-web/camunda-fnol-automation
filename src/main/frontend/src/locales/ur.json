@@ -1,0 +1,118 @@
+{
+  "app": {
+    "title": "جی سی سی موٹر ایف این او ایل",
+    "subtitle": "نقصان کی پہلی اطلاع",
+    "loading": "لوڈ ہو رہا ہے...",
+    "error": "ایک خرابی ہوئی"
+  },
+  "nav": {
+    "home": "ہوم",
+    "newClaim": "حادثے کی رپورٹ",
+    "trackClaim": "دعوی کا پتہ لگائیں"
+  },
+  "form": {
+    "steps": {
+      "contact": "رابطہ کی معلومات",
+      "vehicle": "گاڑی کی تفصیلات",
+      "incident": "واقعہ کی تفصیلات",
+      "attachments": "اٹیچمنٹس",
+      "review": "جائزہ اور جمع کروائیں"
+    },
+    "contact": {
+      "title": "رابطہ کی معلومات",
+      "country": "ملک",
+      "mobileNumber": "موبائل نمبر",
+      "nationalId": "قومی شناختی کارڈ",
+      "name": "پورا نام",
+      "email": "ای میل پتہ"
+    },
+    "vehicle": {
+      "title": "گاڑی کی معلومات",
+      "plateNumber": "پلیٹ نمبر",
+      "plateCountry": "پلیٹ کا ملک",
+      "vehicleType": "گاڑی کی قسم",
+      "make": "میک",
+      "model": "ماڈل",
+      "year": "سال",
+      "color": "رنگ",
+      "policyNumber": "پالیسی نمبر",
+      "coverageType": "کوریج کی قسم",
+      "isFleet": "فلیٹ گاڑی"
+    },
+    "incident": {
+      "title": "واقعہ کی تفصیلات",
+      "date": "واقعہ کی تاریخ",
+      "time": "واقعہ کا وقت",
+      "location": "مقام",
+      "description": "تفصیل",
+      "isDrivable": "گاڑی چلانے کے قابل ہے",
+      "hasInjuries": "زخمی رپورٹ",
+      "thirdParty": "تیسرا فریق شامل",
+      "policeReport": "پولیس رپورٹ نمبر"
+    },
+    "attachments": {
+      "title": "اٹیچمنٹس",
+      "addPhoto": "تصویر شامل کریں",
+      "addVideo": "ویڈیو شامل کریں",
+      "addDocument": "دستاویز شامل کریں",
+      "noAttachments": "کوئی اٹیچمنٹ نہیں"
+    },
+    "review": {
+      "title": "اپنی جمع کرائی گئی معلومات کا جائزہ لیں",
+      "submit": "ایف این او ایل جمع کروائیں"
+    },
+    "buttons": {
+      "next": "اگلا",
+      "back": "پیچھے",
+      "submit": "جمع کروائیں",
+      "cancel": "منسوخ کریں"
+    },
+    "validation": {
+      "required": "یہ فیلڈ ضروری ہے",
+      "invalidEmail": "غلط ای میل پتہ",
+      "invalidPhone": "غلط فون نمبر",
+      "invalidDate": "غلط تاریخ"
+    }
+  },
+  "success": {
+    "title": "ایف این او ایل کامیابی سے جمع ہو گیا",
+    "fnolId": "آپ کا ایف این او ایل حوالہ نمبر",
+    "message": "آپ کا دعوی جمع کر دیا گیا ہے اور اس پر کارروائی ہو رہی ہے۔",
+    "trackLink": "اپنے دعوی کی حالت کا پتہ لگائیں"
+  },
+  "tracking": {
+    "title": "اپنے دعوی کا پتہ لگائیں",
+    "enterFnolId": "اپنا ایف این او ایل آئی ڈی درج کریں",
+    "search": "تلاش کریں",
+    "status": "حیثیت",
+    "severity": "شدت",
+    "route": "پروسیسنگ روٹ",
+    "submitted": "جمع کر دیا گیا",
+    "lastUpdated": "آخری اپڈیٹ"
+  },
+  "countries": {
+    "UAE": "متحدہ عرب امارات",
+    "SAU": "سعودی عرب",
+    "KWT": "کویت",
+    "QAT": "قطر",
+    "BHR": "بحرین",
+    "OMN": "عمان"
+  },
+  "vehicleTypes": {
+    "SEDAN": "سیڈان",
+    "SUV": "ایس یو وی",
+    "PICKUP": "پک اپ",
+    "VAN": "وین",
+    "TRUCK": "ٹرک",
+    "MOTORCYCLE": "موٹر سائیکل",
+    "BUS": "بس",
+    "OTHER": "دیگر"
+  },
+  "coverageTypes": {
+    "COMPREHENSIVE": "جامع",
+    "TPL": "تھرڈ پارٹی لائبلٹی"
+  },
+  "language": {
+    "select": "زبان منتخب کریں"
+  }
+}

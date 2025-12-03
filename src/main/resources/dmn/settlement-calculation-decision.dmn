@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  GCC Motor FNOL Starter Kit - Settlement Calculation Decision
+  Copyright 2025 G. Ganesh Kumar
+  Licensed under the Apache License, Version 2.0
+
+  This DMN calculates settlement amounts and determines approval requirements.
+  Based on damage assessment, coverage type, and policy limits.
+-->
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+             xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/"
+             xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
+             xmlns:modeler="http://camunda.org/schema/modeler/1.0"
+             id="settlement-definitions"
+             name="Settlement Calculation Decision"
+             namespace="http://camunda.org/gcc-motor-fnol/dmn"
+             exporter="GCC Motor FNOL Starter Kit"
+             exporterVersion="1.0.0"
+             modeler:executionPlatform="Camunda Cloud"
+             modeler:executionPlatformVersion="8.6.0">
+
+  <decision id="settlement-calculation-decision" name="Settlement Calculation">
+    <decisionTable id="DecisionTable_Settlement" hitPolicy="FIRST">
+
+      <!-- Input Columns -->
+      <input id="Input_DamageLevel" label="Damage Level">
+        <inputExpression id="InputExpression_Damage" typeRef="string">
+          <text>damageLevel</text>
+        </inputExpression>
+        <inputValues id="InputValues_Damage">
+          <text>"MINOR","MODERATE","MAJOR","TOTAL_LOSS"</text>
+        </inputValues>
+      </input>
+
+      <input id="Input_Coverage" label="Coverage Type">
+        <inputExpression id="InputExpression_Coverage" typeRef="string">
+          <text>coverageType</text>
+        </inputExpression>
+        <inputValues id="InputValues_Coverage">
+          <text>"COMPREHENSIVE","TPL"</text>
+        </inputValues>
+      </input>
+
+      <input id="Input_EstimatedAmount" label="Estimated Amount (AED)">
+        <inputExpression id="InputExpression_Amount" typeRef="number">
+          <text>estimatedAmount</text>
+        </inputExpression>
+      </input>
+
+      <input id="Input_HasInjuries" label="Has Injuries">
+        <inputExpression id="InputExpression_Injuries" typeRef="boolean">
+          <text>hasInjuries</text>
+        </inputExpression>
+      </input>
+
+      <!-- Output Columns -->
+      <output id="Output_ApprovalLimit" label="Auto-Approval Limit" name="autoApprovalLimit" typeRef="number" />
+      <output id="Output_RequiresApproval" label="Requires Manager Approval" name="requiresApproval" typeRef="boolean" />
+      <output id="Output_ApprovalLevel" label="Approval Level" name="approvalLevel" typeRef="string" />
+      <output id="Output_SettlementType" label="Settlement Type" name="settlementType" typeRef="string" />
+
+      <!-- Rule 1: Total Loss with Injuries - Always needs executive approval -->
+      <rule id="Rule_TotalLossInjury">
+        <description>Total loss with injuries requires executive approval</description>
+        <inputEntry id="TLI_1"><text>"TOTAL_LOSS"</text></inputEntry>
+        <inputEntry id="TLI_2"><text>-</text></inputEntry>
+        <inputEntry id="TLI_3"><text>-</text></inputEntry>
+        <inputEntry id="TLI_4"><text>true</text></inputEntry>
+        <outputEntry id="TLI_Out1"><text>0</text></outputEntry>
+        <outputEntry id="TLI_Out2"><text>true</text></outputEntry>
+        <outputEntry id="TLI_Out3"><text>"EXECUTIVE"</text></outputEntry>
+        <outputEntry id="TLI_Out4"><text>"FULL_SETTLEMENT"</text></outputEntry>
+      </rule>
+
+      <!-- Rule 2: Total Loss Comprehensive > 100,000 AED -->
+      <rule id="Rule_TotalLossHighValue">
+        <description>High value total loss needs senior approval</description>
+        <inputEntry id="TLHV_1"><text>"TOTAL_LOSS"</text></inputEntry>
+        <inputEntry id="TLHV_2"><text>"COMPREHENSIVE"</text></inputEntry>
+        <inputEntry id="TLHV_3"><text>>100000</text></inputEntry>
+        <inputEntry id="TLHV_4"><text>false</text></inputEntry>
+        <outputEntry id="TLHV_Out1"><text>100000</text></outputEntry>
+        <outputEntry id="TLHV_Out2"><text>true</text></outputEntry>
+        <outputEntry id="TLHV_Out3"><text>"SENIOR_MANAGER"</text></outputEntry>
+        <outputEntry id="TLHV_Out4"><text>"FULL_SETTLEMENT"</text></outputEntry>
+      </rule>
+
+      <!-- Rule 3: Total Loss Comprehensive <= 100,000 AED -->
+      <rule id="Rule_TotalLossStandard">
+        <description>Standard total loss can be approved by manager</description>
+        <inputEntry id="TLS_1"><text>"TOTAL_LOSS"</text></inputEntry>
+        <inputEntry id="TLS_2"><text>"COMPREHENSIVE"</text></inputEntry>
+        <inputEntry id="TLS_3"><text><=100000</text></inputEntry>
+        <inputEntry id="TLS_4"><text>false</text></inputEntry>
+        <outputEntry id="TLS_Out1"><text>50000</text></outputEntry>
+        <outputEntry id="TLS_Out2"><text>true</text></outputEntry>
+        <outputEntry id="TLS_Out3"><text>"MANAGER"</text></outputEntry>
+        <outputEntry id="TLS_Out4"><text>"FULL_SETTLEMENT"</text></outputEntry>
+      </rule>
+
+      <!-- Rule 4: Major Damage with Injuries -->
+      <rule id="Rule_MajorInjury">
+        <description>Major damage with injuries needs manager approval</description>
+        <inputEntry id="MJI_1"><text>"MAJOR"</text></inputEntry>
+        <inputEntry id="MJI_2"><text>-</text></inputEntry>
+        <inputEntry id="MJI_3"><text>-</text></inputEntry>
+        <inputEntry id="MJI_4"><text>true</text></inputEntry>
+        <outputEntry id="MJI_Out1"><text>25000</text></outputEntry>
+        <outputEntry id="MJI_Out2"><text>true</text></outputEntry>
+        <outputEntry id="MJI_Out3"><text>"MANAGER"</text></outputEntry>
+        <outputEntry id="MJI_Out4"><text>"REPAIR_SETTLEMENT"</text></outputEntry>
+      </rule>
+
+      <!-- Rule 5: Major Damage > 50,000 AED -->
+      <rule id="Rule_MajorHighValue">
+        <description>High value major damage needs manager approval</description>
+        <inputEntry id="MJHV_1"><text>"MAJOR"</text></inputEntry>
+        <inputEntry id="MJHV_2"><text>"COMPREHENSIVE"</text></inputEntry>
+        <inputEntry id="MJHV_3"><text>>50000</text></inputEntry>
+        <inputEntry id="MJHV_4"><text>false</text></inputEntry>
+        <outputEntry id="MJHV_Out1"><text>50000</text></outputEntry>
+        <outputEntry id="MJHV_Out2"><text>true</text></outputEntry>
+        <outputEntry id="MJHV_Out3"><text>"MANAGER"</text></outputEntry>
+        <outputEntry id="MJHV_Out4"><text>"REPAIR_SETTLEMENT"</text></outputEntry>
+      </rule>
+
+      <!-- Rule 6: Major Damage Standard -->
+      <rule id="Rule_MajorStandard">
+        <description>Standard major damage can be approved by supervisor</description>
+        <inputEntry id="MJS_1"><text>"MAJOR"</text></inputEntry>
+        <inputEntry id="MJS_2"><text>-</text></inputEntry>
+        <inputEntry id="MJS_3"><text><=50000</text></inputEntry>
+        <inputEntry id="MJS_4"><text>false</text></inputEntry>
+        <outputEntry id="MJS_Out1"><text>50000</text></outputEntry>
+        <outputEntry id="MJS_Out2"><text>false</text></outputEntry>
+        <outputEntry id="MJS_Out3"><text>"SUPERVISOR"</text></outputEntry>
+        <outputEntry id="MJS_Out4"><text>"REPAIR_SETTLEMENT"</text></outputEntry>
+      </rule>
+
+      <!-- Rule 7: Moderate Damage > 25,000 AED -->
+      <rule id="Rule_ModerateHighValue">
+        <description>High value moderate damage needs supervisor approval</description>
+        <inputEntry id="MODHV_1"><text>"MODERATE"</text></inputEntry>
+        <inputEntry id="MODHV_2"><text>-</text></inputEntry>
+        <inputEntry id="MODHV_3"><text>>25000</text></inputEntry>
+        <inputEntry id="MODHV_4"><text>-</text></inputEntry>
+        <outputEntry id="MODHV_Out1"><text>25000</text></outputEntry>
+        <outputEntry id="MODHV_Out2"><text>true</text></outputEntry>
+        <outputEntry id="MODHV_Out3"><text>"SUPERVISOR"</text></outputEntry>
+        <outputEntry id="MODHV_Out4"><text>"REPAIR_SETTLEMENT"</text></outputEntry>
+      </rule>
+
+      <!-- Rule 8: Moderate Damage Standard -->
+      <rule id="Rule_ModerateStandard">
+        <description>Standard moderate damage - auto approved</description>
+        <inputEntry id="MODS_1"><text>"MODERATE"</text></inputEntry>
+        <inputEntry id="MODS_2"><text>-</text></inputEntry>
+        <inputEntry id="MODS_3"><text><=25000</text></inputEntry>
+        <inputEntry id="MODS_4"><text>-</text></inputEntry>
+        <outputEntry id="MODS_Out1"><text>25000</text></outputEntry>
+        <outputEntry id="MODS_Out2"><text>false</text></outputEntry>
+        <outputEntry id="MODS_Out3"><text>"AUTO"</text></outputEntry>
+        <outputEntry id="MODS_Out4"><text>"REPAIR_SETTLEMENT"</text></outputEntry>
+      </rule>
+
+      <!-- Rule 9: Minor Damage > 10,000 AED -->
+      <rule id="Rule_MinorHighValue">
+        <description>High value minor damage - unusual, needs review</description>
+        <inputEntry id="MINHV_1"><text>"MINOR"</text></inputEntry>
+        <inputEntry id="MINHV_2"><text>-</text></inputEntry>
+        <inputEntry id="MINHV_3"><text>>10000</text></inputEntry>
+        <inputEntry id="MINHV_4"><text>-</text></inputEntry>
+        <outputEntry id="MINHV_Out1"><text>10000</text></outputEntry>
+        <outputEntry id="MINHV_Out2"><text>true</text></outputEntry>
+        <outputEntry id="MINHV_Out3"><text>"SUPERVISOR"</text></outputEntry>
+        <outputEntry id="MINHV_Out4"><text>"QUICK_REPAIR"</text></outputEntry>
+      </rule>
+
+      <!-- Rule 10: Minor Damage Standard - Fast Track -->
+      <rule id="Rule_MinorStandard">
+        <description>Standard minor damage - auto approved fast track</description>
+        <inputEntry id="MINS_1"><text>"MINOR"</text></inputEntry>
+        <inputEntry id="MINS_2"><text>-</text></inputEntry>
+        <inputEntry id="MINS_3"><text><=10000</text></inputEntry>
+        <inputEntry id="MINS_4"><text>-</text></inputEntry>
+        <outputEntry id="MINS_Out1"><text>10000</text></outputEntry>
+        <outputEntry id="MINS_Out2"><text>false</text></outputEntry>
+        <outputEntry id="MINS_Out3"><text>"AUTO"</text></outputEntry>
+        <outputEntry id="MINS_Out4"><text>"QUICK_REPAIR"</text></outputEntry>
+      </rule>
+
+      <!-- Rule 11: TPL Claims - Third Party Liability -->
+      <rule id="Rule_TPL">
+        <description>TPL claims always need review</description>
+        <inputEntry id="TPL_1"><text>-</text></inputEntry>
+        <inputEntry id="TPL_2"><text>"TPL"</text></inputEntry>
+        <inputEntry id="TPL_3"><text>-</text></inputEntry>
+        <inputEntry id="TPL_4"><text>-</text></inputEntry>
+        <outputEntry id="TPL_Out1"><text>5000</text></outputEntry>
+        <outputEntry id="TPL_Out2"><text>true</text></outputEntry>
+        <outputEntry id="TPL_Out3"><text>"SUPERVISOR"</text></outputEntry>
+        <outputEntry id="TPL_Out4"><text>"TPL_SETTLEMENT"</text></outputEntry>
+      </rule>
+
+      <!-- Rule 12: Default -->
+      <rule id="Rule_Default">
+        <description>Default - needs manager approval</description>
+        <inputEntry id="DEF_1"><text>-</text></inputEntry>
+        <inputEntry id="DEF_2"><text>-</text></inputEntry>
+        <inputEntry id="DEF_3"><text>-</text></inputEntry>
+        <inputEntry id="DEF_4"><text>-</text></inputEntry>
+        <outputEntry id="DEF_Out1"><text>10000</text></outputEntry>
+        <outputEntry id="DEF_Out2"><text>true</text></outputEntry>
+        <outputEntry id="DEF_Out3"><text>"MANAGER"</text></outputEntry>
+        <outputEntry id="DEF_Out4"><text>"STANDARD_SETTLEMENT"</text></outputEntry>
+      </rule>
+
+    </decisionTable>
+  </decision>
+
+</definitions>

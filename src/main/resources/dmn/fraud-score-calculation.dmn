@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  GCC Motor FNOL Starter Kit - Fraud Score Calculation Decision
+  Copyright 2025 G. Ganesh Kumar
+  Licensed under the Apache License, Version 2.0
+
+  This DMN calculates the overall fraud score based on individual check results.
+  Score ranges: 0-100 (0 = no fraud risk, 100 = definite fraud)
+-->
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+             xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/"
+             xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
+             xmlns:modeler="http://camunda.org/schema/modeler/1.0"
+             id="fraud-score-definitions"
+             name="Fraud Score Calculation"
+             namespace="http://camunda.org/gcc-motor-fnol/dmn"
+             exporter="GCC Motor FNOL Starter Kit"
+             exporterVersion="1.0.0"
+             modeler:executionPlatform="Camunda Cloud"
+             modeler:executionPlatformVersion="8.6.0">
+
+  <decision id="fraud-score-calculation" name="Fraud Score Calculation">
+    <decisionTable id="DecisionTable_FraudScore" hitPolicy="COLLECT" aggregation="SUM">
+
+      <!-- Input Columns -->
+      <input id="Input_VelocityRisk" label="Velocity Risk Level">
+        <inputExpression id="InputExpression_Velocity" typeRef="string">
+          <text>velocityRiskLevel</text>
+        </inputExpression>
+        <inputValues id="InputValues_Velocity">
+          <text>"NONE","LOW","MEDIUM","HIGH","CRITICAL"</text>
+        </inputValues>
+      </input>
+
+      <input id="Input_DuplicateRisk" label="Duplicate Risk Level">
+        <inputExpression id="InputExpression_Duplicate" typeRef="string">
+          <text>duplicateRiskLevel</text>
+        </inputExpression>
+        <inputValues id="InputValues_Duplicate">
+          <text>"NONE","LOW","MEDIUM","HIGH","CRITICAL"</text>
+        </inputValues>
+      </input>
+
+      <input id="Input_BlacklistMatch" label="Blacklist Match">
+        <inputExpression id="InputExpression_Blacklist" typeRef="boolean">
+          <text>blacklistMatch</text>
+        </inputExpression>
+      </input>
+
+      <input id="Input_PatternScore" label="Pattern Analysis Score">
+        <inputExpression id="InputExpression_Pattern" typeRef="number">
+          <text>patternScore</text>
+        </inputExpression>
+      </input>
+
+      <!-- Output Column (scores are summed due to COLLECT aggregation) -->
+      <output id="Output_Score" label="Fraud Score Component" name="fraudScoreComponent" typeRef="number" />
+
+      <!-- Velocity Rules -->
+      <rule id="Rule_VelocityCritical">
+        <description>CRITICAL velocity risk adds 40 points</description>
+        <inputEntry id="VelCrit_1"><text>"CRITICAL"</text></inputEntry>
+        <inputEntry id="VelCrit_2"><text>-</text></inputEntry>
+        <inputEntry id="VelCrit_3"><text>-</text></inputEntry>
+        <inputEntry id="VelCrit_4"><text>-</text></inputEntry>
+        <outputEntry id="VelCrit_Out"><text>40</text></outputEntry>
+      </rule>
+
+      <rule id="Rule_VelocityHigh">
+        <description>HIGH velocity risk adds 25 points</description>
+        <inputEntry id="VelHigh_1"><text>"HIGH"</text></inputEntry>
+        <inputEntry id="VelHigh_2"><text>-</text></inputEntry>
+        <inputEntry id="VelHigh_3"><text>-</text></inputEntry>
+        <inputEntry id="VelHigh_4"><text>-</text></inputEntry>
+        <outputEntry id="VelHigh_Out"><text>25</text></outputEntry>
+      </rule>
+
+      <rule id="Rule_VelocityMedium">
+        <description>MEDIUM velocity risk adds 15 points</description>
+        <inputEntry id="VelMed_1"><text>"MEDIUM"</text></inputEntry>
+        <inputEntry id="VelMed_2"><text>-</text></inputEntry>
+        <inputEntry id="VelMed_3"><text>-</text></inputEntry>
+        <inputEntry id="VelMed_4"><text>-</text></inputEntry>
+        <outputEntry id="VelMed_Out"><text>15</text></outputEntry>
+      </rule>
+
+      <rule id="Rule_VelocityLow">
+        <description>LOW velocity risk adds 5 points</description>
+        <inputEntry id="VelLow_1"><text>"LOW"</text></inputEntry>
+        <inputEntry id="VelLow_2"><text>-</text></inputEntry>
+        <inputEntry id="VelLow_3"><text>-</text></inputEntry>
+        <inputEntry id="VelLow_4"><text>-</text></inputEntry>
+        <outputEntry id="VelLow_Out"><text>5</text></outputEntry>
+      </rule>
+
+      <!-- Duplicate Rules -->
+      <rule id="Rule_DuplicateCritical">
+        <description>CRITICAL duplicate risk adds 50 points (exact match)</description>
+        <inputEntry id="DupCrit_1"><text>-</text></inputEntry>
+        <inputEntry id="DupCrit_2"><text>"CRITICAL"</text></inputEntry>
+        <inputEntry id="DupCrit_3"><text>-</text></inputEntry>
+        <inputEntry id="DupCrit_4"><text>-</text></inputEntry>
+        <outputEntry id="DupCrit_Out"><text>50</text></outputEntry>
+      </rule>
+
+      <rule id="Rule_DuplicateHigh">
+        <description>HIGH duplicate risk adds 30 points</description>
+        <inputEntry id="DupHigh_1"><text>-</text></inputEntry>
+        <inputEntry id="DupHigh_2"><text>"HIGH"</text></inputEntry>
+        <inputEntry id="DupHigh_3"><text>-</text></inputEntry>
+        <inputEntry id="DupHigh_4"><text>-</text></inputEntry>
+        <outputEntry id="DupHigh_Out"><text>30</text></outputEntry>
+      </rule>
+
+      <rule id="Rule_DuplicateMedium">
+        <description>MEDIUM duplicate risk adds 15 points</description>
+        <inputEntry id="DupMed_1"><text>-</text></inputEntry>
+        <inputEntry id="DupMed_2"><text>"MEDIUM"</text></inputEntry>
+        <inputEntry id="DupMed_3"><text>-</text></inputEntry>
+        <inputEntry id="DupMed_4"><text>-</text></inputEntry>
+        <outputEntry id="DupMed_Out"><text>15</text></outputEntry>
+      </rule>
+
+      <!-- Blacklist Rules -->
+      <rule id="Rule_BlacklistMatch">
+        <description>Blacklist match adds 60 points (very serious)</description>
+        <inputEntry id="Black_1"><text>-</text></inputEntry>
+        <inputEntry id="Black_2"><text>-</text></inputEntry>
+        <inputEntry id="Black_3"><text>true</text></inputEntry>
+        <inputEntry id="Black_4"><text>-</text></inputEntry>
+        <outputEntry id="Black_Out"><text>60</text></outputEntry>
+      </rule>
+
+      <!-- Pattern Analysis Rules -->
+      <rule id="Rule_PatternHigh">
+        <description>High pattern score (>75) adds 25 points</description>
+        <inputEntry id="Pat_1"><text>-</text></inputEntry>
+        <inputEntry id="Pat_2"><text>-</text></inputEntry>
+        <inputEntry id="Pat_3"><text>-</text></inputEntry>
+        <inputEntry id="Pat_4"><text>>75</text></inputEntry>
+        <outputEntry id="Pat_Out"><text>25</text></outputEntry>
+      </rule>
+
+      <rule id="Rule_PatternMedium">
+        <description>Medium pattern score (50-75) adds 15 points</description>
+        <inputEntry id="PatMed_1"><text>-</text></inputEntry>
+        <inputEntry id="PatMed_2"><text>-</text></inputEntry>
+        <inputEntry id="PatMed_3"><text>-</text></inputEntry>
+        <inputEntry id="PatMed_4"><text>[50..75]</text></inputEntry>
+        <outputEntry id="PatMed_Out"><text>15</text></outputEntry>
+      </rule>
+
+      <rule id="Rule_PatternLow">
+        <description>Low pattern score (25-50) adds 5 points</description>
+        <inputEntry id="PatLow_1"><text>-</text></inputEntry>
+        <inputEntry id="PatLow_2"><text>-</text></inputEntry>
+        <inputEntry id="PatLow_3"><text>-</text></inputEntry>
+        <inputEntry id="PatLow_4"><text>[25..50)</text></inputEntry>
+        <outputEntry id="PatLow_Out"><text>5</text></outputEntry>
+      </rule>
+
+    </decisionTable>
+  </decision>
+
+</definitions>

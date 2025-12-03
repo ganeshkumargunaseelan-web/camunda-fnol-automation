@@ -1,0 +1,118 @@
+{
+  "app": {
+    "title": "GCC Motor FNOL",
+    "subtitle": "First Notice of Loss",
+    "loading": "Loading...",
+    "error": "An error occurred"
+  },
+  "nav": {
+    "home": "Home",
+    "newClaim": "Report Accident",
+    "trackClaim": "Track Claim"
+  },
+  "form": {
+    "steps": {
+      "contact": "Contact Info",
+      "vehicle": "Vehicle Details",
+      "incident": "Incident Details",
+      "attachments": "Attachments",
+      "review": "Review & Submit"
+    },
+    "contact": {
+      "title": "Contact Information",
+      "country": "Country",
+      "mobileNumber": "Mobile Number",
+      "nationalId": "National ID",
+      "name": "Full Name",
+      "email": "Email Address"
+    },
+    "vehicle": {
+      "title": "Vehicle Information",
+      "plateNumber": "Plate Number",
+      "plateCountry": "Plate Country",
+      "vehicleType": "Vehicle Type",
+      "make": "Make",
+      "model": "Model",
+      "year": "Year",
+      "color": "Color",
+      "policyNumber": "Policy Number",
+      "coverageType": "Coverage Type",
+      "isFleet": "Fleet Vehicle"
+    },
+    "incident": {
+      "title": "Incident Details",
+      "date": "Incident Date",
+      "time": "Incident Time",
+      "location": "Location",
+      "description": "Description",
+      "isDrivable": "Vehicle is drivable",
+      "hasInjuries": "Injuries reported",
+      "thirdParty": "Third party involved",
+      "policeReport": "Police Report Number"
+    },
+    "attachments": {
+      "title": "Attachments",
+      "addPhoto": "Add Photo",
+      "addVideo": "Add Video",
+      "addDocument": "Add Document",
+      "noAttachments": "No attachments added"
+    },
+    "review": {
+      "title": "Review Your Submission",
+      "submit": "Submit FNOL"
+    },
+    "buttons": {
+      "next": "Next",
+      "back": "Back",
+      "submit": "Submit",
+      "cancel": "Cancel"
+    },
+    "validation": {
+      "required": "This field is required",
+      "invalidEmail": "Invalid email address",
+      "invalidPhone": "Invalid phone number",
+      "invalidDate": "Invalid date"
+    }
+  },
+  "success": {
+    "title": "FNOL Submitted Successfully",
+    "fnolId": "Your FNOL Reference Number",
+    "message": "Your claim has been submitted and is being processed.",
+    "trackLink": "Track your claim status"
+  },
+  "tracking": {
+    "title": "Track Your Claim",
+    "enterFnolId": "Enter your FNOL ID",
+    "search": "Search",
+    "status": "Status",
+    "severity": "Severity",
+    "route": "Processing Route",
+    "submitted": "Submitted",
+    "lastUpdated": "Last Updated"
+  },
+  "countries": {
+    "UAE": "United Arab Emirates",
+    "SAU": "Saudi Arabia",
+    "KWT": "Kuwait",
+    "QAT": "Qatar",
+    "BHR": "Bahrain",
+    "OMN": "Oman"
+  },
+  "vehicleTypes": {
+    "SEDAN": "Sedan",
+    "SUV": "SUV",
+    "PICKUP": "Pickup",
+    "VAN": "Van",
+    "TRUCK": "Truck",
+    "MOTORCYCLE": "Motorcycle",
+    "BUS": "Bus",
+    "OTHER": "Other"
+  },
+  "coverageTypes": {
+    "COMPREHENSIVE": "Comprehensive",
+    "TPL": "Third Party Liability"
+  },
+  "language": {
+    "select": "Select Language"
+  }
+}

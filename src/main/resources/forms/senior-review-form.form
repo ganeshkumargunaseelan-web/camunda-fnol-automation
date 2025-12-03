@@ -1,0 +1,203 @@
+{
+  "schemaVersion": 16,
+  "exporter": {
+    "name": "GCC Motor FNOL Starter Kit",
+    "version": "1.0.0"
+  },
+  "components": [
+    {
+      "text": "# Senior Claims Handler Review\n\n**PRIORITY: HIGH** - This claim involves reported injuries and requires immediate attention.",
+      "type": "text",
+      "id": "Field_Header"
+    },
+    {
+      "label": "FNOL Reference",
+      "type": "textfield",
+      "id": "Field_FnolId",
+      "key": "fnolId",
+      "disabled": true
+    },
+    {
+      "label": "Severity Level",
+      "type": "textfield",
+      "id": "Field_Severity",
+      "key": "severityLevel",
+      "disabled": true
+    },
+    {
+      "text": "## Injury Details",
+      "type": "text",
+      "id": "Field_InjurySection"
+    },
+    {
+      "label": "Injuries Reported",
+      "type": "checkbox",
+      "id": "Field_Injuries",
+      "key": "injuries",
+      "disabled": true
+    },
+    {
+      "label": "Incident Description",
+      "type": "textarea",
+      "id": "Field_Description",
+      "key": "description",
+      "disabled": true
+    },
+    {
+      "text": "## Contact Information",
+      "type": "text",
+      "id": "Field_ContactSection"
+    },
+    {
+      "label": "Reporter Name",
+      "type": "textfield",
+      "id": "Field_ReporterName",
+      "key": "reporterName",
+      "disabled": true
+    },
+    {
+      "label": "Mobile Number",
+      "type": "textfield",
+      "id": "Field_Mobile",
+      "key": "mobileNumber",
+      "disabled": true
+    },
+    {
+      "label": "National ID",
+      "type": "textfield",
+      "id": "Field_NationalId",
+      "key": "nationalId",
+      "disabled": true
+    },
+    {
+      "text": "---\n\n## Senior Assessment",
+      "type": "text",
+      "id": "Field_AssessmentSection"
+    },
+    {
+      "label": "Injury Severity Classification",
+      "type": "select",
+      "id": "Field_InjurySeverity",
+      "key": "injurySeverity",
+      "validate": {
+        "required": true
+      },
+      "values": [
+        { "label": "Minor - First aid only", "value": "MINOR" },
+        { "label": "Moderate - Medical treatment required", "value": "MODERATE" },
+        { "label": "Serious - Hospitalization required", "value": "SERIOUS" },
+        { "label": "Critical - Life threatening", "value": "CRITICAL" },
+        { "label": "Fatal - Death reported", "value": "FATAL" }
+      ]
+    },
+    {
+      "label": "Number of Injured Persons",
+      "type": "number",
+      "id": "Field_InjuredCount",
+      "key": "injuredPersonsCount",
+      "validate": {
+        "required": true,
+        "min": 1,
+        "max": 50
+      }
+    },
+    {
+      "label": "Medical Facility Notified",
+      "type": "checkbox",
+      "id": "Field_MedicalNotified",
+      "key": "medicalFacilityNotified"
+    },
+    {
+      "label": "Police Report Available",
+      "type": "checkbox",
+      "id": "Field_PoliceReport",
+      "key": "policeReportAvailable"
+    },
+    {
+      "label": "Police Report Number",
+      "type": "textfield",
+      "id": "Field_PoliceReportNumber",
+      "key": "policeReportNumber",
+      "conditional": {
+        "hide": "=policeReportAvailable = false"
+      }
+    },
+    {
+      "label": "Liability Assessment",
+      "type": "select",
+      "id": "Field_Liability",
+      "key": "liabilityAssessment",
+      "validate": {
+        "required": true
+      },
+      "values": [
+        { "label": "Insured at fault (100%)", "value": "INSURED_100" },
+        { "label": "Insured majority at fault (75%)", "value": "INSURED_75" },
+        { "label": "Shared liability (50/50)", "value": "SHARED_50" },
+        { "label": "Third party majority at fault (75%)", "value": "THIRD_PARTY_75" },
+        { "label": "Third party at fault (100%)", "value": "THIRD_PARTY_100" },
+        { "label": "Unable to determine", "value": "UNDETERMINED" }
+      ]
+    },
+    {
+      "label": "Estimated Medical Costs (AED)",
+      "type": "number",
+      "id": "Field_MedicalCosts",
+      "key": "estimatedMedicalCosts",
+      "validate": {
+        "min": 0
+      }
+    },
+    {
+      "label": "Detailed Assessment Notes",
+      "type": "textarea",
+      "id": "Field_Notes",
+      "key": "seniorAssessmentNotes",
+      "validate": {
+        "required": true,
+        "minLength": 50
+      },
+      "description": "Provide comprehensive assessment notes (minimum 50 characters)"
+    },
+    {
+      "label": "Special Handling Required",
+      "type": "checklist",
+      "id": "Field_SpecialHandling",
+      "key": "specialHandling",
+      "values": [
+        { "label": "Legal team involvement", "value": "LEGAL" },
+        { "label": "Media relations alert", "value": "MEDIA" },
+        { "label": "VIP customer handling", "value": "VIP" },
+        { "label": "Regulatory reporting required", "value": "REGULATORY" },
+        { "label": "Fraud investigation referral", "value": "FRAUD" }
+      ]
+    },
+    {
+      "label": "Recommendation",
+      "type": "select",
+      "id": "Field_Recommendation",
+      "key": "seniorRecommendation",
+      "validate": {
+        "required": true
+      },
+      "values": [
+        { "label": "Proceed with claim processing", "value": "PROCEED" },
+        { "label": "Expedite - Fast track processing", "value": "EXPEDITE" },
+        { "label": "Hold - Pending investigation", "value": "HOLD" },
+        { "label": "Escalate to Claims Director", "value": "ESCALATE" },
+        { "label": "Reject - Invalid claim", "value": "REJECT" }
+      ]
+    },
+    {
+      "label": "I confirm this senior assessment is complete and accurate",
+      "type": "checkbox",
+      "id": "Field_Confirm",
+      "key": "seniorAssessmentConfirmed",
+      "validate": {
+        "required": true
+      }
+    }
+  ],
+  "type": "default",
+  "id": "senior-review-form"
+}

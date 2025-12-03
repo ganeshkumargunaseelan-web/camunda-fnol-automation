@@ -1,0 +1,79 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# GCC MOTOR FNOL STARTER KIT - PRODUCTION CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════════════════
+# This profile is for production deployments.
+# Usage: java -jar gcc-motor-fnol-starter.jar --spring.profiles.active=production
+#
+# REQUIRED ENVIRONMENT VARIABLES:
+#   - DATABASE_URL
+#   - DATABASE_USERNAME
+#   - DATABASE_PASSWORD
+#   - CAMUNDA_MODE (saas or self-managed)
+#   - For SaaS: CAMUNDA_CLOUD_REGION, CAMUNDA_CLOUD_CLUSTER_ID,
+#               CAMUNDA_CLOUD_CLIENT_ID, CAMUNDA_CLOUD_CLIENT_SECRET
+#   - For Self-Managed: ZEEBE_GATEWAY_ADDRESS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+spring:
+  # ═══ DATABASE - PRODUCTION SETTINGS ═══
+  datasource:
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:20}
+      minimum-idle: ${DB_MIN_IDLE:5}
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        generate_statistics: false
+
+  flyway:
+    enabled: true
+    validate-on-migrate: true
+    clean-disabled: true
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# FNOL PRODUCTION SETTINGS
+# ─────────────────────────────────────────────────────────────────────────────────
+fnol:
+  demo-mode: false
+  security:
+    rate-limit:
+      enabled: true
+      requests-per-minute: ${FNOL_RATE_LIMIT_RPM:60}
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# OBSERVABILITY - PRODUCTION
+# ─────────────────────────────────────────────────────────────────────────────────
+management:
+  endpoint:
+    health:
+      show-details: never
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# LOGGING - PRODUCTION (JSON FORMAT)
+# ─────────────────────────────────────────────────────────────────────────────────
+logging:
+  level:
+    root: WARN
+    io.camunda.community.fnol: INFO
+    io.camunda.zeebe: WARN
+    org.springframework: WARN
+    org.hibernate: WARN
+  pattern:
+    console: '{"timestamp":"%d{yyyy-MM-dd HH:mm:ss.SSS}","level":"%level","logger":"%logger","message":"%msg"}%n'
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# SPRINGDOC - DISABLE IN PRODUCTION (Optional)
+# ─────────────────────────────────────────────────────────────────────────────────
+springdoc:
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:false}

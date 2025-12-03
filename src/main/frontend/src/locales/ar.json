@@ -1,0 +1,118 @@
+{
+  "app": {
+    "title": "إشعار حادث السيارات",
+    "subtitle": "الإخطار الأول بالخسارة",
+    "loading": "جاري التحميل...",
+    "error": "حدث خطأ"
+  },
+  "nav": {
+    "home": "الرئيسية",
+    "newClaim": "الإبلاغ عن حادث",
+    "trackClaim": "تتبع المطالبة"
+  },
+  "form": {
+    "steps": {
+      "contact": "معلومات الاتصال",
+      "vehicle": "تفاصيل المركبة",
+      "incident": "تفاصيل الحادث",
+      "attachments": "المرفقات",
+      "review": "المراجعة والإرسال"
+    },
+    "contact": {
+      "title": "معلومات الاتصال",
+      "country": "الدولة",
+      "mobileNumber": "رقم الهاتف المحمول",
+      "nationalId": "رقم الهوية الوطنية",
+      "name": "الاسم الكامل",
+      "email": "البريد الإلكتروني"
+    },
+    "vehicle": {
+      "title": "معلومات المركبة",
+      "plateNumber": "رقم اللوحة",
+      "plateCountry": "دولة اللوحة",
+      "vehicleType": "نوع المركبة",
+      "make": "الشركة المصنعة",
+      "model": "الموديل",
+      "year": "سنة الصنع",
+      "color": "اللون",
+      "policyNumber": "رقم البوليصة",
+      "coverageType": "نوع التغطية",
+      "isFleet": "مركبة أسطول"
+    },
+    "incident": {
+      "title": "تفاصيل الحادث",
+      "date": "تاريخ الحادث",
+      "time": "وقت الحادث",
+      "location": "الموقع",
+      "description": "الوصف",
+      "isDrivable": "المركبة قابلة للقيادة",
+      "hasInjuries": "وجود إصابات",
+      "thirdParty": "طرف ثالث متورط",
+      "policeReport": "رقم تقرير الشرطة"
+    },
+    "attachments": {
+      "title": "المرفقات",
+      "addPhoto": "إضافة صورة",
+      "addVideo": "إضافة فيديو",
+      "addDocument": "إضافة مستند",
+      "noAttachments": "لا توجد مرفقات"
+    },
+    "review": {
+      "title": "مراجعة الطلب",
+      "submit": "إرسال الإشعار"
+    },
+    "buttons": {
+      "next": "التالي",
+      "back": "السابق",
+      "submit": "إرسال",
+      "cancel": "إلغاء"
+    },
+    "validation": {
+      "required": "هذا الحقل مطلوب",
+      "invalidEmail": "البريد الإلكتروني غير صالح",
+      "invalidPhone": "رقم الهاتف غير صالح",
+      "invalidDate": "التاريخ غير صالح"
+    }
+  },
+  "success": {
+    "title": "تم إرسال الإشعار بنجاح",
+    "fnolId": "رقم مرجع الإشعار",
+    "message": "تم إرسال مطالبتك وهي قيد المعالجة.",
+    "trackLink": "تتبع حالة مطالبتك"
+  },
+  "tracking": {
+    "title": "تتبع مطالبتك",
+    "enterFnolId": "أدخل رقم الإشعار",
+    "search": "بحث",
+    "status": "الحالة",
+    "severity": "الأولوية",
+    "route": "مسار المعالجة",
+    "submitted": "تم الإرسال",
+    "lastUpdated": "آخر تحديث"
+  },
+  "countries": {
+    "UAE": "الإمارات العربية المتحدة",
+    "SAU": "المملكة العربية السعودية",
+    "KWT": "الكويت",
+    "QAT": "قطر",
+    "BHR": "البحرين",
+    "OMN": "عُمان"
+  },
+  "vehicleTypes": {
+    "SEDAN": "سيدان",
+    "SUV": "دفع رباعي",
+    "PICKUP": "بيك أب",
+    "VAN": "فان",
+    "TRUCK": "شاحنة",
+    "MOTORCYCLE": "دراجة نارية",
+    "BUS": "حافلة",
+    "OTHER": "أخرى"
+  },
+  "coverageTypes": {
+    "COMPREHENSIVE": "شامل",
+    "TPL": "ضد الغير"
+  },
+  "language": {
+    "select": "اختر اللغة"
+  }
+}

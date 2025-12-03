@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 16,
+  "exporter": {
+    "name": "GCC Motor FNOL Starter Kit",
+    "version": "1.0.0"
+  },
+  "components": [
+    {
+      "text": "# Claims Review Form\n\nReview the FNOL claim details and provide your assessment.",
+      "type": "text",
+      "id": "Field_Header"
+    },
+    {
+      "label": "FNOL Reference",
+      "type": "textfield",
+      "id": "Field_FnolId",
+      "key": "fnolId",
+      "disabled": true
+    },
+    {
+      "text": "## Claim Details",
+      "type": "text",
+      "id": "Field_ClaimSection"
+    },
+    {
+      "label": "Reporter Name",
+      "type": "textfield",
+      "id": "Field_ReporterName",
+      "key": "reporterName",
+      "disabled": true
+    },
+    {
+      "label": "Mobile Number",
+      "type": "textfield",
+      "id": "Field_Mobile",
+      "key": "mobileNumber",
+      "disabled": true
+    },
+    {
+      "label": "Incident Date",
+      "type": "textfield",
+      "id": "Field_IncidentDate",
+      "key": "incidentDate",
+      "disabled": true
+    },
+    {
+      "label": "Incident Location",
+      "type": "textfield",
+      "id": "Field_Location",
+      "key": "incidentLocation",
+      "disabled": true
+    },
+    {
+      "label": "Description",
+      "type": "textarea",
+      "id": "Field_Description",
+      "key": "description",
+      "disabled": true
+    },
+    {
+      "text": "## Vehicle Information",
+      "type": "text",
+      "id": "Field_VehicleSection"
+    },
+    {
+      "label": "Vehicle",
+      "type": "textfield",
+      "id": "Field_Vehicle",
+      "key": "vehicleInfo",
+      "disabled": true,
+      "description": "Make, Model, Year"
+    },
+    {
+      "label": "Plate Number",
+      "type": "textfield",
+      "id": "Field_PlateNumber",
+      "key": "plateNumber",
+      "disabled": true
+    },
+    {
+      "label": "Policy Number",
+      "type": "textfield",
+      "id": "Field_PolicyNumber",
+      "key": "policyNumber",
+      "disabled": true
+    },
+    {
+      "label": "Coverage Type",
+      "type": "textfield",
+      "id": "Field_Coverage",
+      "key": "coverageType",
+      "disabled": true
+    },
+    {
+      "text": "## Assessment Flags",
+      "type": "text",
+      "id": "Field_FlagsSection"
+    },
+    {
+      "label": "Vehicle Drivable",
+      "type": "checkbox",
+      "id": "Field_Drivable",
+      "key": "drivable",
+      "disabled": true
+    },
+    {
+      "label": "Injuries Reported",
+      "type": "checkbox",
+      "id": "Field_Injuries",
+      "key": "injuries",
+      "disabled": true
+    },
+    {
+      "label": "Third Party Involved",
+      "type": "checkbox",
+      "id": "Field_ThirdParty",
+      "key": "thirdPartyInvolved",
+      "disabled": true
+    },
+    {
+      "text": "---\n\n## Your Assessment",
+      "type": "text",
+      "id": "Field_AssessmentSection"
+    },
+    {
+      "label": "Damage Level",
+      "type": "select",
+      "id": "Field_DamageLevel",
+      "key": "damageLevel",
+      "validate": {
+        "required": true
+      },
+      "values": [
+        { "label": "Minor - Small scratches/dents", "value": "MINOR" },
+        { "label": "Moderate - Panel damage, repairable", "value": "MODERATE" },
+        { "label": "Major - Significant structural damage", "value": "MAJOR" },
+        { "label": "Total Loss - Beyond economical repair", "value": "TOTAL_LOSS" }
+      ]
+    },
+    {
+      "label": "Estimated Repair Cost (AED)",
+      "type": "number",
+      "id": "Field_EstimatedCost",
+      "key": "estimatedAmount",
+      "validate": {
+        "required": true,
+        "min": 0,
+        "max": 1000000
+      }
+    },
+    {
+      "label": "Assessment Notes",
+      "type": "textarea",
+      "id": "Field_Notes",
+      "key": "assessmentNotes",
+      "validate": {
+        "required": true,
+        "minLength": 20
+      },
+      "description": "Provide detailed notes about your assessment (minimum 20 characters)"
+    },
+    {
+      "label": "Recommendation",
+      "type": "select",
+      "id": "Field_Recommendation",
+      "key": "recommendation",
+      "validate": {
+        "required": true
+      },
+      "values": [
+        { "label": "Approve - Proceed with settlement", "value": "APPROVE" },
+        { "label": "Request More Info - Need additional documents", "value": "REQUEST_INFO" },
+        { "label": "Escalate - Needs senior review", "value": "ESCALATE" },
+        { "label": "Reject - Invalid claim", "value": "REJECT" }
+      ]
+    },
+    {
+      "label": "I confirm this assessment is accurate",
+      "type": "checkbox",
+      "id": "Field_Confirm",
+      "key": "assessmentConfirmed",
+      "validate": {
+        "required": true
+      }
+    }
+  ],
+  "type": "default",
+  "id": "claims-review-form"
+}
