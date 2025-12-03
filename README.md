@@ -141,6 +141,16 @@ export CAMUNDA_CLOUD_REGION=bru-2
 java -jar gcc-motor-fnol-starter-1.0.0.jar
 ```
 
+### Option 3: With Camunda 8 Self-Managed
+
+1. Start your Camunda 8 cluster (Docker / Kubernetes)
+2. Configure connection in `src/main/resources/application-selfmanaged.yml`
+3. Run:
+
+```bash
+java -jar gcc-motor-fnol-starter-1.0.0.jar --spring.profiles.active=selfmanaged
+```
+
 ---
 
 ## 📊 BPMN Process Diagrams
